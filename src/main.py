@@ -23,6 +23,7 @@ from src.api.routes import health
 from src.api.routes import monitoring
 from src.api.routes import chat
 from src.api.routes import rag
+from src.api.routes import prompts
 
 # Configure logging
 logging.basicConfig(
@@ -129,7 +130,8 @@ async def root():
             "redoc": "/redoc",
             "chat": "/chat",
             "rag": "/rag/query",
-            "monitoring": "/monitoring/metrics"
+            "monitoring": "/monitoring/metrics",
+            "prompts": "/prompts/templates"
         }
     }
 
@@ -139,6 +141,7 @@ app.include_router(health.router)
 app.include_router(monitoring.router)
 app.include_router(chat.router)
 app.include_router(rag.router)
+app.include_router(prompts.router)
 
 
 if __name__ == "__main__":
