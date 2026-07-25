@@ -4,6 +4,16 @@
 
 A production-ready Azure AI infrastructure platform that integrates Azure OpenAI, Azure Cognitive Search, and Azure Storage into a unified RESTful API. Built with FastAPI, featuring advanced monitoring, observability, and enterprise-grade guardrails.
 
+**📊 Project Status:** Production-Ready ✅  
+**🧪 Test Coverage:** 27.21% (112 tests passing)  
+**🐳 Docker Support:** Containerized deployment ready  
+**🚀 CI/CD:** GitHub Actions automated testing and deployment
+
+**📘 Documentation:**
+- [Architecture Guide](docs/ARCHITECTURE.md) - System design, data flows, security, and scalability
+- [Deployment Guide](docs/DEPLOYMENT.md) - Azure deployment strategies (Container Apps, App Service, AKS)
+- [Quick Start](docs/QUICK_START.md) - Fast-track deployment and troubleshooting
+
 ## 🚀 Features
 
 ### AI & LLM
@@ -142,6 +152,37 @@ Pre-configured dashboards are available:
 - API Performance Dashboard
 - AI Usage Dashboard
 - System Health Dashboard
+
+## 🏗️ Architecture & Deployment
+
+### System Architecture
+![Architecture](docs/ARCHITECTURE_DIAGRAM.md)
+
+**Key Components:**
+- **Application Layer**: FastAPI with modular routes (Chat, RAG, Guardrails, Monitoring)
+- **Business Logic Layer**: LLM orchestrator, RAG processor, Safety manager
+- **Azure Services**: OpenAI (GPT-4), Cognitive Search, Storage, Key Vault
+- **Observability Stack**: Prometheus, Grafana, Application Insights, structured logging
+
+### Data Flow
+```
+Client → API Gateway → Guardrails → LLM/RAG → Output Filter → Client
+                      ↓                   ↓
+                 PII Detection      Azure Services
+                      ↓                   ↓
+                 Rate Limiting     Observability
+```
+
+### Deployment Strategies
+- **Production**: Azure Container Apps (recommended)
+- **Simplified**: Azure App Service
+- **Local**: Docker Compose
+- **Enterprise**: Azure Kubernetes Service (AKS)
+
+**Detailed Documentation:**
+- [📘 Architecture Guide](docs/ARCHITECTURE.md) - System design, security, scalability
+- [🚀 Deployment Guide](docs/DEPLOYMENT.md) - Azure deployment strategies
+- [⚡ Quick Start](docs/QUICK_START.md) - Fast-track deployment
 
 ## 🧪 Testing
 
