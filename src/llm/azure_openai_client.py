@@ -17,7 +17,12 @@ from datetime import datetime
 import logging
 
 from openai import AsyncAzureOpenAI
-from openai import AzureOpenAIError, RateLimitError, APITimeoutError
+from openai import (
+    APIError,
+    RateLimitError,
+    APITimeoutError,
+    APIConnectionError
+)
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -82,7 +87,7 @@ class AzureOpenAIClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
-        retry=retry_if_exception_type((APITimeoutError, AzureOpenAIError))
+        retry=retry_if_exception_type((APITimeoutError, APIError))
     )
     async def chat_completion(
         self,

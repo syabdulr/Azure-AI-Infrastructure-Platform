@@ -6,7 +6,7 @@ This module provides:
 - Relevance scoring
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import logging
 import re
 

@@ -10,7 +10,7 @@ This module provides:
 import logging
 import json
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import uuid
 
 from src.config.settings import get_settings

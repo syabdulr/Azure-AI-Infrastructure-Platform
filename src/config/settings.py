@@ -7,7 +7,8 @@ and provides type-safe access to configuration values.
 
 import os
 from typing import Optional, List
-from pydantic import BaseSettings, Field, validator
+from pydantic import Field, validator
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
