@@ -1,0 +1,38 @@
+# Prometheus configuration for Azure AI Infrastructure Platform
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'azure-ai-platform'
+    environment: 'production'
+
+# Alertmanager configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['alertmanager:9093']
+
+# Rule files
+# rule_files:
+#   - 'alerts.yml'
+
+# Scrape configurations
+scrape_configs:
+  # Azure AI Platform API metrics
+  - job_name: 'azure-ai-platform'
+    static_configs:
+      - targets: ['api:8000']
+    metrics_path: '/observability/metrics/prometheus'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Redis metrics (optional)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
