@@ -24,3 +24,14 @@ psutil==5.9.6
 
 # Utilities
 aiofiles==23.2.1
+
+# Development tools
+flake8==6.1.0
+black==23.12.1
+isort==5.13.2
+mypy==1.8.0
+types-PyYAML==6.0.12.12
+
+# Security
+safety==3.0.1
+bandit[toml]==1.7.6
