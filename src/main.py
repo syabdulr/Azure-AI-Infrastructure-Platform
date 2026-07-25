@@ -25,6 +25,7 @@ from src.api.routes import chat
 from src.api.routes import rag
 from src.api.routes import prompts
 from src.api.routes import guardrails
+from src.api.routes import observability
 
 # Configure logging
 logging.basicConfig(
@@ -133,7 +134,8 @@ async def root():
             "rag": "/rag/query",
             "monitoring": "/monitoring/metrics",
             "prompts": "/prompts/templates",
-            "guardrails": "/guardrails/check-input"
+            "guardrails": "/guardrails/check-input",
+            "observability": "/observability/metrics"
         }
     }
 
@@ -145,6 +147,7 @@ app.include_router(chat.router)
 app.include_router(rag.router)
 app.include_router(prompts.router)
 app.include_router(guardrails.router)
+app.include_router(observability.router)
 
 
 if __name__ == "__main__":
