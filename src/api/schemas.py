@@ -145,6 +145,7 @@ class RAGRequest(BaseModel):
     top_k: int = Field(5, ge=1, le=10, description="Number of top results to return")
     include_citations: bool = Field(True, description="Include citation information")
     min_score: float = Field(0.5, ge=0.0, le=1.0, description="Minimum relevance score")
+    context_window: int = Field(4000, ge=1000, le=16000, description="Maximum context length in tokens")
 
     @validator('query')
     def validate_query(cls, v):
