@@ -1,372 +1,228 @@
 # Azure AI Infrastructure Platform
 
-[![CI/CD](https://github.com/syabdulr/Azure-AI-Infrastructure-Platform/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/syabdulr/Azure-AI-Infrastructure-Platform/actions)
-|[![Docker](https://github.com/syabdulr/Azure-AI-Infrastructure-Platform/workflows/Docker%20Build/badge.svg)](https://github.com/syabdulr/Azure-AI-Infrastructure-Platform/actions/workflows/docker.yml)
-|[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-|[![Python 3.11](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-
-A production-grade AI platform deployed on Azure with full infrastructure-as-code, monitoring, and operational capabilities. Built for enterprises that need to deploy AI workloads at scale with security, scalability, and cost efficiency.
-
 ## 🎯 Overview
 
-The Azure AI Infrastructure Platform demonstrates a complete AI platform engineering approach—from code to cloud deployment with comprehensive observability. This is not just an AI demo; it's a production-ready system that showcases how to operationalize AI workloads in enterprise environments.
+A production-ready Azure AI infrastructure platform that integrates Azure OpenAI, Azure Cognitive Search, and Azure Storage into a unified RESTful API. Built with FastAPI, featuring advanced monitoring, observability, and enterprise-grade guardrails.
 
-### Key Features
+## 🚀 Features
 
-- **Azure-Native AI**: Azure OpenAI Service, Azure Cognitive Search, Azure Container Apps
-- **RAG Pipeline**: Hybrid vector + keyword search with semantic reranking
-- **Prompt Engineering**: Template management, versioning, A/B testing, evaluation
-- **Guardrails System**: Content filtering, rate limiting, PII protection
-- **Infrastructure as Code**: Terraform configuration for all Azure resources
-- **Production Deployment**: Auto-scaling, health checks, cost optimization
-- **Comprehensive Monitoring**: Azure Monitor, Application Insights, custom dashboards
-- **Security First**: Managed identities, Key Vault, WAF policies
+### AI & LLM
+- **Azure OpenAI Integration**: Production-ready chat completions with GPT-4
+- **Streaming Responses**: Real-time streaming for conversational AI
+- **Prompt Management**: Version-controlled prompt templates with evaluation metrics
+- **Response Evaluation**: Automated quality assessment of AI responses
 
-## 🏗️ Architecture
+### RAG (Retrieval-Augmented Generation)
+- **Azure Cognitive Search**: Enterprise-grade semantic search
+- **Document Processing**: Automatic chunking, embedding, and indexing
+- **Batch Indexing**: Efficient bulk document processing
+- **Semantic Retrieval**: Vector-based search with relevance scoring
 
-### System Architecture
+### Guardrails & Safety
+- **Input Filtering**: PII detection and redaction (emails, phones, SSNs)
+- **Content Filtering**: Output safety checks
+- **Rate Limiting**: User-level request throttling
+- **Violation Tracking**: Comprehensive audit logging
 
-```mermaid
-graph TB
-    subgraph "GitHub Actions CI/CD"
-        A[CI/CD Pipeline]
-    end
-    
-    subgraph "Azure Resources"
-        B[Azure Container Apps]
-        C[Azure OpenAI Service]
-        D[Azure Cognitive Search]
-        E[Azure Blob Storage]
-        F[Azure Key Vault]
-        G[Azure Monitor]
-        H[Azure Application Gateway]
-    end
-    
-    subgraph "Application Stack"
-        I[FastAPI AI Service]
-        J[RAG Pipeline]
-        K[Prompt Templates]
-        L[Guardrails System]
-        M[Monitoring Agent]
-    end
-    
-    A --> B
-    B --> I
-    I --> C
-    I --> D
-    I --> E
-    I --> F
-    B --> G
-    H --> B
-```
+### Monitoring & Observability
+- **Prometheus Metrics**: Real-time metrics collection and export
+- **Structured Logging**: JSON-formatted logs with correlation IDs
+- **Health Checks**: Multi-tier health monitoring (application, dependencies, system)
+- **Alert Management**: Configurable alerting with rules and thresholds
 
-### Tech Stack
+### Enterprise Features
+- **Docker Support**: Containerized deployment with Docker Compose
+- **CI/CD Pipeline**: GitHub Actions for automated testing and deployment
+- **Comprehensive Testing**: 112+ unit tests with 27%+ code coverage
+- **API Documentation**: Interactive Swagger UI with all endpoints documented
 
-```
-Cloud Platform:  Azure (OpenAI, Container Apps, Cognitive Search, Monitor)
-AI Framework:    LangChain + Azure OpenAI
-Vector Database: Azure Cognitive Search
-API Framework:   FastAPI
-Infrastructure:  Terraform (IaC)
-Containerization: Docker + Azure Container Registry
-CI/CD:           GitHub Actions
-Monitoring:      Azure Monitor + OpenTelemetry
-Security:        Azure Key Vault + Managed Identities
-```
+## 📊 API Endpoints
 
-## 🚀 Quick Start
+### Health & Monitoring
+- `GET /health` - Health check with dependency status
+- `GET /health/live` - Liveness probe
+- `GET /health/ready` - Readiness probe
+- `GET /monitoring/metrics` - Application metrics
+- `GET /observability/metrics` - Extended metrics (Prometheus format)
+- `GET /observability/health` - Health status with system metrics
+
+### Chat & AI
+- `POST /chat` - Chat completion with Azure OpenAI
+- `POST /chat/stream` - Streaming chat completion
+- `POST /prompts/evaluate` - Evaluate prompt responses
+- `GET /prompts/templates` - List prompt templates
+- `POST /prompts/templates/{name}/versions` - Create prompt version
+
+### RAG
+- `POST /rag/query` - Query documents with semantic search
+- `POST /rag/index` - Index a document
+- `POST /rag/index/batch` - Batch index documents
+
+### Guardrails
+- `POST /guardrails/check-input` - Check input for PII and safety
+- `POST /guardrails/check-output` - Check output for safety
+- `GET /guardrails/limits/{user_id}` - Get rate limit status
+- `GET /guardrails/violations` - List all violations
+
+## 🛠️ Installation
 
 ### Prerequisites
-
-- Azure subscription with Owner or Contributor access
-- Azure CLI installed and authenticated
-- Terraform >= 1.5.0
 - Python 3.11+
-- Docker (for local testing)
-- GitHub account with Azure service principal configured
+- Azure account with:
+  - Azure OpenAI Service
+  - Azure Cognitive Search
+  - Azure Storage Account
 
-### Installation
+### Quick Start
 
+1. **Clone the repository**
 ```bash
-# Clone repository
 git clone https://github.com/syabdulr/Azure-AI-Infrastructure-Platform.git
-cd azure-ai-infra-platform
+cd Azure-AI-Infrastructure-Platform
+```
 
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # Linux/Mac
-# or venv\Scripts\activate  # Windows
+2. **Create virtual environment**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
 
-# Install dependencies
-pip install --upgrade pip
+3. **Install dependencies**
+```bash
 pip install -r requirements.txt
-pip install -r requirements-dev.txt
+```
 
-# Configure environment variables
+4. **Configure environment variables**
+```bash
 cp .env.example .env
 # Edit .env with your Azure credentials
-
-# Initialize Terraform
-cd terraform
-terraform init
-terraform plan -var-file=environments/dev.tfvars
-terraform apply -var-file=environments/dev.tfvars
 ```
 
-### Configuration
-
-Create a `.env` file with the following variables:
-
-```env
-# Azure Configuration
-AZURE_SUBSCRIPTION_ID=your_subscription_id
-AZURE_TENANT_ID=your_tenant_id
-AZURE_CLIENT_ID=your_client_id
-AZURE_CLIENT_SECRET=your_client_secret
-AZURE_RESOURCE_GROUP=ai-infra-rg
-AZURE_LOCATION=eastus
-
-# Azure OpenAI Configuration
-AZURE_OPENAI_RESOURCE=ai-openai-service
-AZURE_OPENAI_API_KEY=your_openai_key
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com
-AZURE_OPENAI_API_VERSION=2024-02-15-preview
-AZURE_OPENAI_CHAT_DEPLOYMENT=gpt-4
-AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-ada-002
-
-# Azure Cognitive Search Configuration
-AZURE_SEARCH_SERVICE=ai-search-service
-AZURE_SEARCH_INDEX=ai-knowledge-base
-
-# Monitoring
-LOG_LEVEL=INFO
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+5. **Run the application**
+```bash
+uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-## 📊 Features
+6. **Access the API**
+- API Documentation: http://localhost:8000/docs
+- Health Check: http://localhost:8000/health
+- Metrics: http://localhost:8000/observability/metrics
 
-### AI Services
+## 🐳 Docker Deployment
 
-- **Azure OpenAI Integration**: GPT-4 deployments with managed identity authentication
-- **RAG Pipeline**: Hybrid search with Azure Cognitive Search
-- **Prompt Templates**: Version-controlled prompt engineering with A/B testing
-- **Response Evaluation**: Quality metrics and automated scoring
+### Using Docker Compose
+```bash
+docker-compose up -d
+```
 
-### Infrastructure
+This will start:
+- FastAPI application (port 8000)
+- Prometheus (port 9090)
+- Grafana (port 3000)
 
-- **Terraform IaC**: All infrastructure as code with version control
-- **Azure Container Apps**: Auto-scaling (scale-to-zero for cost efficiency)
-- **Azure Monitor**: Comprehensive monitoring with custom dashboards
-- **Azure Key Vault**: Secure secrets management with managed identities
+### Access Services
+- Application: http://localhost:8000
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3000 (admin/admin)
 
-### Security
+## 📈 Monitoring
 
-- **Managed Identities**: No hardcoded credentials
-- **Key Vault Integration**: Secure secret storage
-- **Content Filtering**: Safety guardrails and PII protection
-- **Rate Limiting**: Token-based and IP-based rate limiting
-- **WAF Policies**: Web Application Firewall protection
+### Prometheus Metrics
+Metrics are available at `/observability/metrics/prometheus` for Prometheus scraping.
 
-### Operations
+Key metrics include:
+- API request rate and latency
+- AI request count and token usage
+- RAG query performance
+- Guardrails violations
+- System resource usage
 
-- **Auto-scaling**: Scale-to-zero for cost optimization
-- **Health Checks**: Comprehensive health monitoring
-- **Error Handling**: Retry logic with exponential backoff
-- **Cost Tracking**: Token usage and cost metrics
-- **Incident Response**: Runbooks and alerting
+### Grafana Dashboards
+Pre-configured dashboards are available:
+- API Performance Dashboard
+- AI Usage Dashboard
+- System Health Dashboard
 
 ## 🧪 Testing
 
-### Run Tests
-
+### Run Unit Tests
 ```bash
-# Run all tests
-pytest tests/ -v
-
-# Run specific test categories
-pytest tests/unit -v           # Unit tests only
-pytest tests/integration -v   # Integration tests only
-pytest tests/e2e -v           # End-to-end tests only
-
-# Run with coverage
-pytest tests/ --cov=src --cov-report=html --cov-report=term-missing
-
-# Run Terraform tests
-cd terraform/tests
-go test -v
+pytest tests/unit/ -v
 ```
 
-### Make Targets
-
+### Run with Coverage
 ```bash
-make test              # Run all tests
-make test-unit         # Run unit tests
-make test-integration  # Run integration tests
-make test-e2e          # Run end-to-end tests
-make test-coverage     # Run tests with coverage report
-make lint              # Run linter
-make format            # Format code
-make plan              # Run Terraform plan
-make apply             # Run Terraform apply
-make destroy           # Run Terraform destroy
+pytest tests/unit/ --cov=src --cov-report=html
 ```
 
-## 📖 API Documentation
+### Test Results
+- **Tests**: 112/112 passing ✅
+- **Coverage**: 27.21% (unit tests only)
+- **CI/CD**: GitHub Actions automated testing
 
-### Interactive Documentation
+## 🔒 Security Features
 
-Once deployed, access interactive documentation at:
+- **PII Detection**: Automatic detection and redaction of sensitive data
+- **Rate Limiting**: Prevents abuse with configurable per-user limits
+- **Content Filtering**: Input/output safety checks
+- **Audit Logging**: Comprehensive tracking of all AI interactions
+- **Secret Management**: Support for Azure Key Vault integration
 
-- **Swagger UI**: `https://your-api-app.dev.azurecontainerapps.io/docs`
-- **ReDoc**: `https://your-api-app.dev.azurecontainerapps.io/redoc`
-- **OpenAPI JSON**: `https://your-api-app.dev.azurecontainerapps.io/openapi.json`
+## 📁 Project Structure
 
-### Example Requests
-
-#### Chat Completion
-
-```bash
-curl -X POST https://your-api-app.dev.azurecontainerapps.io/chat \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "Explain Azure Container Apps",
-    "temperature": 0.7,
-    "max_tokens": 500
-  }'
+```
+azure-ai-infra-platform/
+├── src/
+│   ├── api/              # API routes and schemas
+│   ├── llm/              # LLM integration (OpenAI, prompts)
+│   ├── rag/              # RAG implementation (Cognitive Search)
+│   ├── guardrails/       # Safety and rate limiting
+│   ├── monitoring/       # Metrics, logging, alerts
+│   ├── config/           # Configuration management
+│   └── main.py           # FastAPI application
+├── tests/                # Unit and integration tests
+├── docs/                 # Documentation
+├── docker/               # Docker configurations
+├── .github/workflows/    # CI/CD pipelines
+└── requirements.txt      # Python dependencies
 ```
 
-#### RAG Query
+## 🎨 Screenshots
 
-```bash
-curl -X POST https://your-api-app.dev.azurecontainerapps.io/rag/query \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "How does auto-scaling work in Azure Container Apps?",
-    "top_k": 5,
-    "include_citations": true
-  }'
-```
+### Swagger UI - Complete API Documentation
+![Swagger UI](MEDIA:/home/openclaw/.hermes/cache/screenshots/browser_screenshot_9b27d23037ed4c42bd1150f59454aa77.png)
 
-#### Health Check
-
-```bash
-curl https://your-api-app.dev.azurecontainerapps.io/health
-```
-
-## 🐳 Deployment
-
-### Production Deployment
-
-```bash
-# Initialize Terraform
-cd terraform
-terraform init
-
-# Plan production deployment
-terraform plan -var-file=environments/prod.tfvars
-
-# Apply production deployment
-terraform apply -var-file=environments/prod.tfvars
-
-# Monitor deployment
-az containerapp revision list \
-  --name ai-api-app \
-  --resource-group ai-infra-rg \
-  --output table
-```
-
-### CI/CD Pipeline
-
-The GitHub Actions CI/CD pipeline automatically:
-- Runs linting and security scans
-- Executes unit and integration tests
-- Validates Terraform configuration
-- Builds and pushes Docker images
-- Deploys to Azure Container Apps
-
-### Monitoring
-
-Access monitoring dashboards at:
-- **Azure Monitor**: `https://portal.azure.com/#@{tenant-id}/resource/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.Insights/components/{app-insights}/overview`
-
-## 💰 Cost Optimization
-
-This platform implements several cost optimization strategies:
-
-1. **Scale-to-Zero**: Azure Container Apps scale to zero when idle
-2. **Azure Spot Instances**: Use spot instances for non-critical workloads
-3. **Batch Processing**: Batch vector embeddings for efficiency
-4. **Caching**: Embedding and response caching
-5. **Lifecycle Policies**: Azure Blob Storage lifecycle rules
-6. **Monitoring**: Cost alerts and budget thresholds
-
-See [COST_OPTIMIZATION.md](docs/COST_OPTIMIZATION.md) for details.
-
-## 🛡️ Security
-
-This platform follows Azure security best practices:
-
-- **Managed Identities**: No hardcoded credentials
-- **Key Vault**: Secure secret storage
-- **Network Isolation**: VNet integration
-- **Content Filtering**: Azure Content Safety API
-- **PII Protection**: Automatic detection and redaction
-- **WAF Policies**: Web Application Firewall
-- **Audit Logging**: Comprehensive audit trails
-
-See [SECURITY.md](docs/SECURITY.md) for details.
-
-## 📚 Documentation
-
-- [Architecture Documentation](docs/ARCHITECTURE.md)
-- [Deployment Guide](docs/DEPLOYMENT.md)
-- [API Documentation](docs/API.md)
-- [Monitoring Guide](docs/MONITORING.md)
-- [Security Documentation](docs/SECURITY.md)
-- [Cost Optimization Guide](docs/COST_OPTIMIZATION.md)
-- [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
+### Metrics Dashboard
+![Metrics](MEDIA:/home/openclaw/.hermes/cache/screenshots/browser_screenshot_ca3bf6d783bd4f6a8b332e83fb30ad20.png)
 
 ## 🤝 Contributing
 
-### Development Workflow
+Contributions are welcome! Please follow these steps:
 
-1. Create a feature branch
-2. Make changes with pre-commit hooks
-3. Run tests locally
-4. Commit changes with descriptive messages
-5. Push and create pull request
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-### Code Style
+## 📝 License
 
-- Use Black for formatting (line length: 100)
-- Use isort for import sorting
-- Follow PEP 8 conventions
-- Add docstrings to all functions and classes
-- Write unit tests for new features
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 📄 License
+## 👨‍💻 Author
 
-MIT License - Abdul Syed
+**Abdul Syed**
+- GitHub: [syabdulr](https://github.com/syabdulr)
+- Email: syabdulr6@gmail.com
+- Role: AI Platform Engineer
 
-## 🎓 Learning Resources
+## 🙏 Acknowledgments
 
-- [Azure OpenAI Documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/)
-- [Azure Cognitive Search](https://learn.microsoft.com/en-us/azure/search/)
-- [Azure Container Apps](https://learn.microsoft.com/en-us/azure/container-apps/)
-- [Terraform Azure Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
-- [LangChain Documentation](https://python.langchain.com/docs/)
-
-## 📞 Contact
-
-**Developer:** Abdul Syed  
-**Role:** AI Platform Engineer  
-**Email:** syabdulr6@gmail.com  
-**GitHub:** https://github.com/syabdulr  
-**LinkedIn:** https://linkedin.com/in/abdulsyed1
+- Azure OpenAI Service
+- Azure Cognitive Search
+- FastAPI framework
+- Prometheus ecosystem
 
 ---
 
-**Project Status:** ✅ Production Ready  
-**Last Updated:** July 24, 2026  
-**Version:** 1.0.0  
-**CI/CD:** ✅ Passing
+**Built with ❤️ for production AI workloads on Azure**
