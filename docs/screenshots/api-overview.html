@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Azure AI Platform - API Endpoints</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #0066cc; border-bottom: 3px solid #0066cc; padding-bottom: 10px; }
+        .endpoint { background: #f9f9f9; padding: 15px; margin: 10px 0; border-left: 4px solid #0066cc; border-radius: 4px; }
+        .method { display: inline-block; padding: 4px 8px; border-radius: 4px; color: white; font-weight: bold; font-size: 12px; margin-right: 10px; }
+        .get { background: #61affe; }
+        .post { background: #49cc90; }
+        .path { font-family: monospace; color: #333; }
+        .description { color: #666; margin-top: 5px; }
+        .category { color: #0066cc; font-weight: bold; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Azure AI Infrastructure Platform</h1>
+        <h2>REST API Endpoints</h2>
+        
+        <div class="category">📊 Monitoring & Health</div>
+        <div class="endpoint">
+            <span class="method get">GET</span>
+            <span class="path">/health</span>
+            <div class="description">Health check with dependency status</div>
+        </div>
+        <div class="endpoint">
+            <span class="method get">GET</span>
+            <span class="path">/health/live</span>
+            <div class="description">Liveness probe for Kubernetes</div>
+        </div>
+        <div class="endpoint">
+            <span class="method get">GET</span>
+            <span class="path">/observability/metrics</span>
+            <div class="description">Application metrics (counters, gauges, histograms)</div>
+        </div>
+        
+        <div class="category">💬 Chat & AI</div>
+        <div class="endpoint">
+            <span class="method post">POST</span>
+            <span class="path">/chat</span>
+            <div class="description">Chat completion with Azure OpenAI GPT-4</div>
+        </div>
+        <div class="endpoint">
+            <span class="method post">POST</span>
+            <span class="path">/chat/stream</span>
+            <div class="description">Streaming chat completion for real-time responses</div>
+        </div>
+        
+        <div class="category">🔍 RAG (Retrieval-Augmented Generation)</div>
+        <div class="endpoint">
+            <span class="method post">POST</span>
+            <span class="path">/rag/query</span>
+            <div class="description">Query documents with semantic search</div>
+        </div>
+        <div class="endpoint">
+            <span class="method post">POST</span>
+            <span class="path">/rag/index</span>
+            <div class="description">Index a document for retrieval</div>
+        </div>
+        
+        <div class="category">🛡️ Guardrails & Safety</div>
+        <div class="endpoint">
+            <span class="method post">POST</span>
+            <span class="path">/guardrails/check-input</span>
+            <div class="description">Check input for PII and safety violations</div>
+        </div>
+        <div class="endpoint">
+            <span class="method post">POST</span>
+            <span class="path">/guardrails/check-output</span>
+            <div class="description">Check output for safety compliance</div>
+        </div>
+        
+        <div class="category">📝 Prompt Management</div>
+        <div class="endpoint">
+            <span class="method get">GET</span>
+            <span class="path">/prompts/templates</span>
+            <div class="description">List all prompt templates</div>
+        </div>
+        <div class="endpoint">
+            <span class="method post">POST</span>
+            <span class="path">/prompts/evaluate</span>
+            <div class="description">Evaluate prompt response quality</div>
+        </div>
+        
+        <p style="color: #666; margin-top: 30px;">
+            <strong>Total Endpoints:</strong> 30+ | <strong>Modules:</strong> 6 | <strong>Status:</strong> Production Ready
+        </p>
+    </div>
+</body>
+</html>

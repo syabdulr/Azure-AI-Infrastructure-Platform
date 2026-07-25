@@ -190,10 +190,37 @@ azure-ai-infra-platform/
 ## 🎨 Screenshots
 
 ### Swagger UI - Complete API Documentation
-![Swagger UI](MEDIA:/home/openclaw/.hermes/cache/screenshots/browser_screenshot_9b27d23037ed4c42bd1150f59454aa77.png)
+![Swagger UI](docs/screenshots/swagger-ui.png)
 
-### Metrics Dashboard
-![Metrics](MEDIA:/home/openclaw/.hermes/cache/screenshots/browser_screenshot_ca3bf6d783bd4f6a8b332e83fb30ad20.png)
+Interactive Swagger UI showing all 30+ API endpoints organized by module:
+- **Health & Monitoring** (5 endpoints)
+- **Chat & AI** (2 endpoints)
+- **RAG** (3 endpoints)
+- **Guardrails** (8 endpoints)
+- **Prompt Management** (8 endpoints)
+- **Observability** (12 endpoints)
+
+### Metrics Dashboard - Real-Time Monitoring
+![Metrics Dashboard](docs/screenshots/metrics-dashboard.png)
+
+Structured JSON metrics showing:
+- API request counters and latency
+- AI request tracking (tokens, cost, latency)
+- RAG query performance metrics
+- Guardrails violation tracking
+- System resource usage
+
+### Health Check - Dependency Status
+![Health Check](docs/screenshots/health-check.png)
+
+Multi-tier health monitoring:
+- Application status
+- Azure OpenAI service health
+- Cognitive Search connectivity
+- Key Vault integration status
+- Response time metrics
+
+**All screenshots available in** [docs/screenshots/](docs/screenshots/)
 
 ## 🤝 Contributing
 
