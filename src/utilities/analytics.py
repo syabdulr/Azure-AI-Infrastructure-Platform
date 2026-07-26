@@ -204,9 +204,9 @@ class UsageAnalytics:
             analysis["recent_vs_previous"] = {
                 "recent_average": recent_avg,
                 "previous_average": previous_avg,
-                "change_percent": ((recent_avg - previous_avg) / previous_avg * 100)
-                if previous_avg > 0
-                else 0,
+                "change_percent": (
+                    ((recent_avg - previous_avg) / previous_avg * 100) if previous_avg > 0 else 0
+                ),
             }
 
         return analysis
@@ -446,9 +446,11 @@ class UsageAnalytics:
                 if peer_avg_cost > 0
                 else 0
             ),
-            "rank": "above_average"
-            if customer_trends["average_daily_usage"] < peer_avg_usage
-            else "below_average",
+            "rank": (
+                "above_average"
+                if customer_trends["average_daily_usage"] < peer_avg_usage
+                else "below_average"
+            ),
             "insight": (
                 f"Your usage is {'lower than' if customer_trends['average_daily_usage'] < peer_avg_usage else 'higher than'} "
                 f"the average for similar homes. {'Great job on energy efficiency!' if customer_trends['average_daily_usage'] < peer_avg_usage else 'Consider optimization recommendations.'}"

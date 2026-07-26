@@ -1,4 +1,5 @@
 """Prompt templates module"""
+
 from .templates import (
     ChatPromptTemplate,
     PromptTemplate,

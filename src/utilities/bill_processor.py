@@ -255,11 +255,13 @@ class BillProcessor:
                 else 0
             ),
             "rate_change": (
-                (bill_b.total_amount / bill_b.units_used)
-                - (bill_a.total_amount / bill_a.units_used)
-            )
-            if bill_a.units_used > 0 and bill_b.units_used > 0
-            else 0,
+                (
+                    (bill_b.total_amount / bill_b.units_used)
+                    - (bill_a.total_amount / bill_a.units_used)
+                )
+                if bill_a.units_used > 0 and bill_b.units_used > 0
+                else 0
+            ),
         }
 
         # Add insights
