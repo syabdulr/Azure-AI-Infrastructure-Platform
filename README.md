@@ -50,6 +50,7 @@ uvicorn src.main:app --reload
 - [Architecture Guide](docs/ARCHITECTURE.md) - System design, security, scalability
 - [Deployment Guide](docs/DEPLOYMENT.md) - Azure deployment strategies
 - [Quick Start](docs/QUICK_START.md) - Fast-track deployment
+- [Documentation Index](docs/README.md) - Complete documentation overview
 
 ---
 
