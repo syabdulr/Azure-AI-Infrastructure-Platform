@@ -11,7 +11,7 @@ This module provides:
 """
 
 from typing import Dict, Any, List, Optional
-from fastapi import APIRouter, Query, Response
+from fastapi import APIRouter, Query, Response, HTTPException
 from datetime import datetime
 import logging
 
