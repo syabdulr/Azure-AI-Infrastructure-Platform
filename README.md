@@ -1,7 +1,6 @@
 # Azure AI Infrastructure Platform
 
 ![Production Ready](https://img.shields.io/badge/status-production--ready-success)
-![Test Coverage](https://img.shields.io/badge/coverage-27.21%25-blue)
 ![Docker](https://img.shields.io/badge/docker-supported-blue)
 ![CI/CD](https://img.shields.io/badge/cicd-github--actions-green)
 
@@ -13,7 +12,7 @@ Deploy and operationalize AI workloads at scale. A unified RESTful API integrati
 
 ---
 
-## ⚡ **UTILITIES USE CASE - FRONT & CENTER**
+## ⚡ **UTILITIES USE CASE**
 
 ### **🔥 4 Production-Ready Utilities Workflows**
 
@@ -69,7 +68,7 @@ uvicorn src.main:app --reload
 
 ---
 
-## 📊 **WHY THIS PROJECT STANDS OUT**
+## ** Value Proposition **
 
 | Feature | What It Means |
 |---------|---------------|
