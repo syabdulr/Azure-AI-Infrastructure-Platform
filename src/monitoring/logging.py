@@ -7,11 +7,11 @@ This module provides:
 - Log level configuration
 """
 
-import logging
 import json
-from datetime import datetime
-from typing import Dict, Any, Optional
+import logging
 import uuid
+from datetime import datetime
+from typing import Any, Dict, Optional
 
 from src.config.settings import get_settings
 
@@ -28,11 +28,11 @@ class StructuredFormatter(logging.Formatter):
             "message": record.getMessage(),
             "module": record.module,
             "function": record.funcName,
-            "line": record.lineno
+            "line": record.lineno,
         }
 
         # Add correlation ID if available
-        if hasattr(record, 'correlation_id'):
+        if hasattr(record, "correlation_id"):
             log_data["correlation_id"] = record.correlation_id
 
         # Add exception info if available
@@ -78,10 +78,10 @@ def get_logger(name: str, correlation_id: Optional[str] = None) -> logging.Logge
         Logger instance
     """
     logger = logging.getLogger(name)
-    
+
     if correlation_id:
         logger = logging.LoggerAdapter(logger, {"correlation_id": correlation_id})
-    
+
     return logger
 
 

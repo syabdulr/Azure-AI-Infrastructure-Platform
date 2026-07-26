@@ -6,9 +6,9 @@ This module provides:
 - Relevance scoring
 """
 
-from typing import Dict, Any, List, Optional
 import logging
 import re
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +21,7 @@ class ResponseEvaluator:
         pass
 
     def evaluate_response_quality(
-        self,
-        response: str,
-        question: Optional[str] = None
+        self, response: str, question: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Evaluate the quality of a response
@@ -38,11 +36,11 @@ class ResponseEvaluator:
         metrics = {
             "length": len(response),
             "word_count": len(response.split()),
-            "sentence_count": len(re.split(r'[.!?]+', response)),
+            "sentence_count": len(re.split(r"[.!?]+", response)),
             "has_structure": self._has_structure(response),
             "has_explanation": self._has_explanation(response),
             "is_concise": self._is_concise(response),
-            "relevance_score": 0.0
+            "relevance_score": 0.0,
         }
 
         if question:
@@ -53,16 +51,16 @@ class ResponseEvaluator:
     def _has_structure(self, response: str) -> bool:
         """Check if response has good structure"""
         # Check for paragraphs, bullet points, or numbered lists
-        has_paragraphs = len(response.split('\n\n')) > 1
-        has_bullets = bool(re.search(r'[\*\-\•]\s', response))
-        has_numbers = bool(re.search(r'\d+\.', response))
-        
+        has_paragraphs = len(response.split("\n\n")) > 1
+        has_bullets = bool(re.search(r"[\*\-\•]\s", response))
+        has_numbers = bool(re.search(r"\d+\.", response))
+
         return has_paragraphs or has_bullets or has_numbers
 
     def _has_explanation(self, response: str) -> bool:
         """Check if response provides explanations"""
         # Check for explanatory words
-        explanation_words = ['because', 'since', 'therefore', 'thus', 'due to', 'as a result']
+        explanation_words = ["because", "since", "therefore", "thus", "due to", "as a result"]
         return any(word in response.lower() for word in explanation_words)
 
     def _is_concise(self, response: str) -> bool:
@@ -94,10 +92,7 @@ class ResponseEvaluator:
         return min(1.0, relevance * 2.0)  # Boost score slightly
 
     def evaluate_rag_response(
-        self,
-        answer: str,
-        sources: List[Dict[str, Any]],
-        query: str
+        self, answer: str, sources: List[Dict[str, Any]], query: str
     ) -> Dict[str, Any]:
         """
         Evaluate a RAG response
@@ -114,7 +109,9 @@ class ResponseEvaluator:
 
         # RAG-specific metrics
         metrics["num_sources"] = len(sources)
-        metrics["avg_source_score"] = sum(s.get("score", 0) for s in sources) / len(sources) if sources else 0.0
+        metrics["avg_source_score"] = (
+            sum(s.get("score", 0) for s in sources) / len(sources) if sources else 0.0
+        )
         metrics["answer_contains_citations"] = self._contains_citations(answer)
 
         return metrics
@@ -122,9 +119,9 @@ class ResponseEvaluator:
     def _contains_citations(self, text: str) -> bool:
         """Check if text contains citation markers"""
         citation_patterns = [
-            r'\[source-\d+\]',
-            r'\[citation:\d+\]',
-            r'\[doc-\d+\]',
-            r'\(source \d+\)',
+            r"\[source-\d+\]",
+            r"\[citation:\d+\]",
+            r"\[doc-\d+\]",
+            r"\(source \d+\)",
         ]
         return any(re.search(pattern, text) for pattern in citation_patterns)

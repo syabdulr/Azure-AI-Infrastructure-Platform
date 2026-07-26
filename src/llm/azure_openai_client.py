@@ -11,24 +11,13 @@ This module provides a production-ready Azure OpenAI client with:
 """
 
 import asyncio
-import time
-from typing import Optional, Dict, Any, AsyncGenerator, List
-from datetime import datetime
 import logging
+import time
+from datetime import datetime
+from typing import Any, AsyncGenerator, Dict, List, Optional
 
-from openai import AsyncAzureOpenAI
-from openai import (
-    APIError,
-    RateLimitError,
-    APITimeoutError,
-    APIConnectionError
-)
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-    retry_if_exception_type
-)
+from openai import APIConnectionError, APIError, APITimeoutError, AsyncAzureOpenAI, RateLimitError
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from src.config.settings import get_settings
 
@@ -45,12 +34,12 @@ class AzureOpenAIClient:
         self._initialize_client()
         self._rate_limiter = RateLimiter(
             max_requests_per_minute=self.settings.rate_limit_requests_per_minute,
-            burst=self.settings.rate_limit_burst
+            burst=self.settings.rate_limit_burst,
         )
         self._cost_tracker = CostTracker(
             gpt4_input_cost=self.settings.gpt4_input_cost_per_1k,
             gpt4_output_cost=self.settings.gpt4_output_cost_per_1k,
-            embedding_cost=self.settings.embedding_cost_per_1k
+            embedding_cost=self.settings.embedding_cost_per_1k,
         )
 
     def _initialize_client(self):
@@ -59,26 +48,28 @@ class AzureOpenAIClient:
             if self.settings.azure_client_id:
                 # Use managed identity authentication
                 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+
                 credential = DefaultAzureCredential()
                 token_provider = get_bearer_token_provider(
-                    credential,
-                    "https://cognitiveservices.azure.com/.default"
+                    credential, "https://cognitiveservices.azure.com/.default"
                 )
                 self.client = AsyncAzureOpenAI(
                     api_version=self.settings.azure_openai_api_version,
                     azure_ad_token_provider=token_provider,
-                    azure_endpoint=self.settings.azure_openai_endpoint
+                    azure_endpoint=self.settings.azure_openai_endpoint,
                 )
             elif self.settings.azure_openai_api_key:
                 # Use API key authentication
                 self.client = AsyncAzureOpenAI(
                     api_version=self.settings.azure_openai_api_version,
                     api_key=self.settings.azure_openai_api_key,
-                    azure_endpoint=self.settings.azure_openai_endpoint
+                    azure_endpoint=self.settings.azure_openai_endpoint,
                 )
             else:
-                raise ValueError("Either azure_client_id or azure_openai_api_key must be configured")
-            
+                raise ValueError(
+                    "Either azure_client_id or azure_openai_api_key must be configured"
+                )
+
             logger.info("Azure OpenAI client initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize Azure OpenAI client: {e}")
@@ -87,14 +78,14 @@ class AzureOpenAIClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
-        retry=retry_if_exception_type((APITimeoutError, APIError))
+        retry=retry_if_exception_type((APITimeoutError, APIError)),
     )
     async def chat_completion(
         self,
         messages: List[Dict[str, str]],
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
-        stream: bool = False
+        stream: bool = False,
     ) -> Dict[str, Any]:
         """
         Get chat completion from GPT-4
@@ -112,7 +103,7 @@ class AzureOpenAIClient:
         await self._rate_limiter.acquire()
 
         start_time = time.time()
-        
+
         try:
             max_tokens = max_tokens or self.settings.chat_max_tokens_default
             temperature = temperature or self.settings.chat_temperature_default
@@ -122,7 +113,7 @@ class AzureOpenAIClient:
                 messages=messages,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                stream=stream
+                stream=stream,
             )
 
             if stream:
@@ -130,7 +121,7 @@ class AzureOpenAIClient:
                 return {
                     "response": response,  # Will be an async generator
                     "stream": True,
-                    "model": self.settings.azure_openai_chat_deployment
+                    "model": self.settings.azure_openai_chat_deployment,
                 }
             else:
                 # Handle non-streaming response
@@ -143,7 +134,7 @@ class AzureOpenAIClient:
                 cost = self._cost_tracker.calculate_cost(
                     prompt_tokens=prompt_tokens,
                     completion_tokens=completion_tokens,
-                    model=self.settings.azure_openai_chat_deployment
+                    model=self.settings.azure_openai_chat_deployment,
                 )
 
                 latency_ms = (time.time() - start_time) * 1000
@@ -160,7 +151,7 @@ class AzureOpenAIClient:
                     "prompt_tokens": prompt_tokens,
                     "completion_tokens": completion_tokens,
                     "cost": cost,
-                    "latency_ms": latency_ms
+                    "latency_ms": latency_ms,
                 }
 
         except RateLimitError as e:
@@ -174,7 +165,7 @@ class AzureOpenAIClient:
         self,
         messages: List[Dict[str, str]],
         max_tokens: Optional[int] = None,
-        temperature: Optional[float] = None
+        temperature: Optional[float] = None,
     ) -> AsyncGenerator[str, None]:
         """
         Get streaming chat completion from GPT-4
@@ -199,7 +190,7 @@ class AzureOpenAIClient:
                 messages=messages,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                stream=True
+                stream=True,
             )
 
             async for chunk in stream:
@@ -210,10 +201,7 @@ class AzureOpenAIClient:
             logger.error(f"Streaming chat completion failed: {e}")
             raise
 
-    async def get_embeddings(
-        self,
-        texts: List[str]
-    ) -> List[List[float]]:
+    async def get_embeddings(self, texts: List[str]) -> List[List[float]]:
         """
         Get embeddings for a list of texts
 
@@ -230,8 +218,7 @@ class AzureOpenAIClient:
 
         try:
             response = await self.client.embeddings.create(
-                model=self.settings.azure_openai_embedding_deployment,
-                input=texts
+                model=self.settings.azure_openai_embedding_deployment, input=texts
             )
 
             embeddings = [item.embedding for item in response.data]
@@ -241,7 +228,7 @@ class AzureOpenAIClient:
             cost = self._cost_tracker.calculate_cost(
                 prompt_tokens=total_tokens,
                 completion_tokens=0,
-                model=self.settings.azure_openai_embedding_deployment
+                model=self.settings.azure_openai_embedding_deployment,
             )
 
             latency_ms = (time.time() - start_time) * 1000
@@ -271,22 +258,16 @@ class AzureOpenAIClient:
             await self.client.chat.completions.create(
                 model=self.settings.azure_openai_chat_deployment,
                 messages=[{"role": "user", "content": "Hello"}],
-                max_tokens=1
+                max_tokens=1,
             )
 
             response_time_ms = (time.time() - start_time) * 1000
 
-            return {
-                "status": "healthy",
-                "response_time_ms": response_time_ms
-            }
+            return {"status": "healthy", "response_time_ms": response_time_ms}
 
         except Exception as e:
             logger.error(f"Azure OpenAI health check failed: {e}")
-            return {
-                "status": "unhealthy",
-                "error": str(e)
-            }
+            return {"status": "unhealthy", "error": str(e)}
 
     def get_total_cost(self) -> float:
         """Get total cost accumulated by this client"""
@@ -329,30 +310,19 @@ class RateLimiter:
 class CostTracker:
     """Track API costs per request"""
 
-    def __init__(
-        self,
-        gpt4_input_cost: float,
-        gpt4_output_cost: float,
-        embedding_cost: float
-    ):
+    def __init__(self, gpt4_input_cost: float, gpt4_output_cost: float, embedding_cost: float):
         self.gpt4_input_cost = gpt4_input_cost
         self.gpt4_output_cost = gpt4_output_cost
         self.embedding_cost = embedding_cost
         self.total_cost = 0.0
         self.request_count = 0
 
-    def calculate_cost(
-        self,
-        prompt_tokens: int,
-        completion_tokens: int,
-        model: str
-    ) -> float:
+    def calculate_cost(self, prompt_tokens: int, completion_tokens: int, model: str) -> float:
         """Calculate cost for a request"""
         if model == "gpt-4":
-            cost = (
-                (prompt_tokens / 1000.0) * self.gpt4_input_cost +
-                (completion_tokens / 1000.0) * self.gpt4_output_cost
-            )
+            cost = (prompt_tokens / 1000.0) * self.gpt4_input_cost + (
+                completion_tokens / 1000.0
+            ) * self.gpt4_output_cost
         elif "embedding" in model:
             cost = (prompt_tokens / 1000.0) * self.embedding_cost
         else:

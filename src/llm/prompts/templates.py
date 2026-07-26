@@ -9,26 +9,20 @@ This module provides:
 - Few-shot learning support
 """
 
-from typing import Dict, Any, Optional, List
-from abc import ABC, abstractmethod
 import logging
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class PromptTemplate(ABC):
     """Base class for prompt templates"""
-    
-    def __init__(
-        self,
-        name: str,
-        template: str,
-        variables: List[str],
-        version: str = "v1"
-    ):
+
+    def __init__(self, name: str, template: str, variables: List[str], version: str = "v1"):
         """
         Initialize prompt template
-        
+
         Args:
             name: Template name
             template: Template string with variables
@@ -39,27 +33,27 @@ class PromptTemplate(ABC):
         self.template = template
         self.variables = variables
         self.version = version
-    
+
     @abstractmethod
     def render(self, context: Dict[str, Any]) -> str:
         """
         Render template with context
-        
+
         Args:
             context: Dictionary with variable values
-            
+
         Returns:
             Rendered template string
         """
         pass
-    
+
     def validate_context(self, context: Dict[str, Any]) -> bool:
         """
         Validate that all required variables are in context
-        
+
         Args:
             context: Context dictionary
-            
+
         Returns:
             True if valid, False otherwise
         """
@@ -72,7 +66,7 @@ class PromptTemplate(ABC):
 
 class RAGPromptTemplate(PromptTemplate):
     """RAG-specific prompt template"""
-    
+
     def __init__(
         self,
         name: str,
@@ -80,11 +74,11 @@ class RAGPromptTemplate(PromptTemplate):
         variables: List[str],
         version: str = "v1",
         chain_of_thought: bool = False,
-        few_shot: bool = False
+        few_shot: bool = False,
     ):
         """
         Initialize RAG prompt template
-        
+
         Args:
             name: Template name
             template: Template string
@@ -96,40 +90,38 @@ class RAGPromptTemplate(PromptTemplate):
         super().__init__(name, template, variables, version)
         self.chain_of_thought = chain_of_thought
         self.few_shot = few_shot
-    
+
     def render(
-        self,
-        context: Dict[str, Any],
-        examples: Optional[List[Dict[str, str]]] = None
+        self, context: Dict[str, Any], examples: Optional[List[Dict[str, str]]] = None
     ) -> str:
         """
         Render RAG template with context and examples
-        
+
         Args:
             context: Context dictionary with variables
             examples: Few-shot examples
-            
+
         Returns:
             Rendered template
         """
         if not self.validate_context(context):
             raise ValueError("Missing required variables in context")
-        
+
         rendered = self.template
-        
+
         # Replace variables
         for var in self.variables:
             placeholder = f"{{{var}}}"
             value = context.get(var, "")
             rendered = rendered.replace(placeholder, str(value))
-        
+
         # Add few-shot examples if enabled
         if self.few_shot and examples:
             examples_text = self._format_examples(examples)
             rendered = rendered.replace("{examples}", examples_text)
-        
+
         return rendered
-    
+
     def _format_examples(self, examples: List[Dict[str, str]]) -> str:
         """Format few-shot examples"""
         formatted = "\n\nExamples:\n"
@@ -143,28 +135,28 @@ class RAGPromptTemplate(PromptTemplate):
 
 class ChatPromptTemplate(PromptTemplate):
     """Chat-specific prompt template"""
-    
+
     def render(self, context: Dict[str, Any]) -> str:
         """
         Render chat template with context
-        
+
         Args:
             context: Context dictionary with variables
-            
+
         Returns:
             Rendered template
         """
         if not self.validate_context(context):
             raise ValueError("Missing required variables in context")
-        
+
         rendered = self.template
-        
+
         # Replace variables
         for var in self.variables:
             placeholder = f"{{{var}}}"
             value = context.get(var, "")
             rendered = rendered.replace(placeholder, str(value))
-        
+
         return rendered
 
 
@@ -172,10 +164,11 @@ class ChatPromptTemplate(PromptTemplate):
 # RAG Templates
 # ============================================================================
 
+
 def get_rag_system_prompt() -> str:
     """
     Get standard RAG system prompt
-    
+
     Returns:
         System prompt string
     """
@@ -198,7 +191,7 @@ Remember:
 def get_rag_user_prompt() -> str:
     """
     Get standard RAG user prompt
-    
+
     Returns:
         User prompt template
     """
@@ -213,7 +206,7 @@ Based on the provided context, answer the question. If the context doesn't conta
 def get_rag_user_cot_prompt() -> str:
     """
     Get chain-of-thought RAG user prompt
-    
+
     Returns:
         Chain-of-thought user prompt template
     """
@@ -244,7 +237,7 @@ Answer:
 def get_rag_user_fewshot_prompt() -> str:
     """
     Get few-shot RAG user prompt
-    
+
     Returns:
         Few-shot user prompt template
     """
@@ -261,7 +254,7 @@ Now answer the question following the same format as the examples above."""
 def get_fewshot_rag_examples() -> List[Dict[str, str]]:
     """
     Get few-shot examples for RAG
-    
+
     Returns:
         List of example dictionaries
     """
@@ -269,13 +262,13 @@ def get_fewshot_rag_examples() -> List[Dict[str, str]]:
         {
             "question": "What is the deployment process?",
             "context": "[Source 1: Deployment Guide]\nTo deploy the AI platform to Azure:\n1. Set up Azure resources\n2. Configure infrastructure\n3. Deploy application\n4. Configure monitoring\n\n[Source 2: Infrastructure Setup]\nInfrastructure requires Azure Container Apps, Azure OpenAI Service, and Azure Cognitive Search.",
-            "answer": "According to Source 1 (Deployment Guide) and Source 2 (Infrastructure Setup), the deployment process involves: (1) setting up Azure resources including Azure Container Apps, Azure OpenAI Service, and Azure Cognitive Search, (2) configuring the infrastructure, (3) deploying the application, and (4) configuring monitoring."
+            "answer": "According to Source 1 (Deployment Guide) and Source 2 (Infrastructure Setup), the deployment process involves: (1) setting up Azure resources including Azure Container Apps, Azure OpenAI Service, and Azure Cognitive Search, (2) configuring the infrastructure, (3) deploying the application, and (4) configuring monitoring.",
         },
         {
             "question": "How do I configure monitoring?",
             "context": "[Source 1: Monitoring Guide]\nMonitoring is configured through Azure Monitor and Application Insights. You need to set up metrics collection, log aggregation, and alerting.\n\n[Source 2: Configuration]\nConfigure monitoring by adding the Application Insights instrumentation key to your environment variables.",
-            "answer": "Based on Source 1 (Monitoring Guide) and Source 2 (Configuration), monitoring is configured by: (1) setting up Azure Monitor and Application Insights, (2) configuring metrics collection, (3) setting up log aggregation, (4) creating alerting rules, and (5) adding the Application Insights instrumentation key to your environment variables."
-        }
+            "answer": "Based on Source 1 (Monitoring Guide) and Source 2 (Configuration), monitoring is configured by: (1) setting up Azure Monitor and Application Insights, (2) configuring metrics collection, (3) setting up log aggregation, (4) creating alerting rules, and (5) adding the Application Insights instrumentation key to your environment variables.",
+        },
     ]
 
 
@@ -283,10 +276,11 @@ def get_fewshot_rag_examples() -> List[Dict[str, str]]:
 # Chat Templates
 # ============================================================================
 
+
 def get_chat_system_prompt() -> str:
     """
     Get standard chat system prompt
-    
+
     Returns:
         System prompt string
     """
@@ -303,7 +297,7 @@ Guidelines:
 def get_chat_code_assistant_prompt() -> str:
     """
     Get code assistant system prompt
-    
+
     Returns:
         Code assistant system prompt
     """
@@ -327,7 +321,7 @@ Guidelines:
 def get_chat_analyst_prompt() -> str:
     """
     Get data analyst system prompt
-    
+
     Returns:
         Data analyst system prompt
     """
@@ -352,10 +346,11 @@ Guidelines:
 # Specialized Templates
 # ============================================================================
 
+
 def get_summarization_prompt() -> str:
     """
     Get text summarization prompt
-    
+
     Returns:
         Summarization prompt template
     """
@@ -370,7 +365,7 @@ Summary:"""
 def get_extraction_prompt() -> str:
     """
     Get information extraction prompt
-    
+
     Returns:
         Extraction prompt template
     """
@@ -387,101 +382,91 @@ Extracted Information:"""
 # Template Factory
 # ============================================================================
 
+
 class PromptTemplateFactory:
     """Factory for creating prompt templates"""
-    
+
     _templates = {
         # RAG templates
         "rag_system": RAGPromptTemplate(
-            name="rag_system",
-            template=get_rag_system_prompt(),
-            variables=[],
-            version="v1"
+            name="rag_system", template=get_rag_system_prompt(), variables=[], version="v1"
         ),
         "rag_user": RAGPromptTemplate(
             name="rag_user",
             template=get_rag_user_prompt(),
             variables=["context", "query"],
-            version="v1"
+            version="v1",
         ),
         "rag_user_cot": RAGPromptTemplate(
             name="rag_user_cot",
             template=get_rag_user_cot_prompt(),
             variables=["context", "query"],
             version="v1",
-            chain_of_thought=True
+            chain_of_thought=True,
         ),
         "rag_user_fewshot": RAGPromptTemplate(
             name="rag_user_fewshot",
             template=get_rag_user_fewshot_prompt(),
             variables=["context", "query"],
             version="v1",
-            few_shot=True
+            few_shot=True,
         ),
-        
         # Chat templates
         "chat_system": ChatPromptTemplate(
-            name="chat_system",
-            template=get_chat_system_prompt(),
-            variables=[],
-            version="v1"
+            name="chat_system", template=get_chat_system_prompt(), variables=[], version="v1"
         ),
         "chat_code_assistant": ChatPromptTemplate(
             name="chat_code_assistant",
             template=get_chat_code_assistant_prompt(),
             variables=[],
-            version="v1"
+            version="v1",
         ),
         "chat_analyst": ChatPromptTemplate(
-            name="chat_analyst",
-            template=get_chat_analyst_prompt(),
-            variables=[],
-            version="v1"
+            name="chat_analyst", template=get_chat_analyst_prompt(), variables=[], version="v1"
         ),
-        
         # Specialized templates
         "summarization": ChatPromptTemplate(
             name="summarization",
             template=get_summarization_prompt(),
             variables=["text"],
-            version="v1"
+            version="v1",
         ),
         "extraction": ChatPromptTemplate(
             name="extraction",
             template=get_extraction_prompt(),
             variables=["fields", "text"],
-            version="v1"
-        )
+            version="v1",
+        ),
     }
-    
+
     @classmethod
     def get_template(cls, name: str) -> Optional[PromptTemplate]:
         """
         Get a prompt template by name
-        
+
         Args:
             name: Template name
-            
+
         Returns:
             PromptTemplate or None if not found
         """
         return cls._templates.get(name)
-    
+
     @classmethod
     def list_templates(cls) -> List[str]:
         """
         List all available template names
-        
+
         Returns:
             List of template names
         """
         return list(cls._templates.keys())
-    
+
     @classmethod
     def register_template(cls, template: PromptTemplate):
         """
         Register a new template
-        
+
         Args:
             template: PromptTemplate to register
         """

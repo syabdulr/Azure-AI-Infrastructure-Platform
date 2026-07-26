@@ -2,12 +2,13 @@
 Monitoring routes for Azure AI Infrastructure Platform
 """
 
-from fastapi import APIRouter
-from datetime import datetime
-from typing import Dict, Any
 import logging
+from datetime import datetime
+from typing import Any, Dict
 
-from src.api.schemas import MetricsResponse, MonitoringStatus, HealthCheckStatus
+from fastapi import APIRouter
+
+from src.api.schemas import HealthCheckStatus, MetricsResponse, MonitoringStatus
 from src.config.settings import get_settings
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ router = APIRouter(prefix="/monitoring", tags=["monitoring"])
 
 class MetricsStore:
     """Simple in-memory metrics store"""
-    
+
     def __init__(self):
         self.request_count = 0
         self.total_tokens = 0
@@ -39,7 +40,9 @@ class MetricsStore:
         """Get current metrics"""
         uptime_seconds = (datetime.utcnow() - self.start_time).total_seconds()
         error_rate = self.error_count / self.request_count if self.request_count > 0 else 0.0
-        avg_latency_ms = self.total_latency_ms / self.request_count if self.request_count > 0 else 0.0
+        avg_latency_ms = (
+            self.total_latency_ms / self.request_count if self.request_count > 0 else 0.0
+        )
 
         return {
             "request_count": self.request_count,
@@ -47,7 +50,7 @@ class MetricsStore:
             "total_cost": self.total_cost,
             "avg_latency_ms": avg_latency_ms,
             "error_rate": error_rate,
-            "uptime_seconds": uptime_seconds
+            "uptime_seconds": uptime_seconds,
         }
 
 
@@ -64,7 +67,7 @@ async def get_metrics() -> MetricsResponse:
         MetricsResponse with request count, tokens, cost, latency, error rate
     """
     metrics = metrics_store.get_metrics()
-    
+
     return MetricsResponse(
         request_count=metrics["request_count"],
         total_tokens=metrics["total_tokens"],
@@ -72,7 +75,7 @@ async def get_metrics() -> MetricsResponse:
         avg_latency_ms=metrics["avg_latency_ms"],
         error_rate=metrics["error_rate"],
         uptime_seconds=metrics["uptime_seconds"],
-        timestamp=datetime.utcnow()
+        timestamp=datetime.utcnow(),
     )
 
 
@@ -85,13 +88,25 @@ async def get_status() -> MonitoringStatus:
         MonitoringStatus with health of all dependencies
     """
     settings = get_settings()
-    
+
     # Simple status checks based on configuration
-    azure_openai_status = HealthCheckStatus.HEALTHY if settings.azure_openai_endpoint else HealthCheckStatus.UNHEALTHY
-    cognitive_search_status = HealthCheckStatus.HEALTHY if settings.azure_search_endpoint else HealthCheckStatus.UNHEALTHY
-    storage_status = HealthCheckStatus.HEALTHY if settings.azure_storage_account else HealthCheckStatus.UNHEALTHY
-    key_vault_status = HealthCheckStatus.HEALTHY if settings.azure_key_vault_name else HealthCheckStatus.UNHEALTHY
-    app_insights_status = HealthCheckStatus.HEALTHY if settings.azure_app_insights_name else HealthCheckStatus.DEGRADED
+    azure_openai_status = (
+        HealthCheckStatus.HEALTHY if settings.azure_openai_endpoint else HealthCheckStatus.UNHEALTHY
+    )
+    cognitive_search_status = (
+        HealthCheckStatus.HEALTHY if settings.azure_search_endpoint else HealthCheckStatus.UNHEALTHY
+    )
+    storage_status = (
+        HealthCheckStatus.HEALTHY if settings.azure_storage_account else HealthCheckStatus.UNHEALTHY
+    )
+    key_vault_status = (
+        HealthCheckStatus.HEALTHY if settings.azure_key_vault_name else HealthCheckStatus.UNHEALTHY
+    )
+    app_insights_status = (
+        HealthCheckStatus.HEALTHY
+        if settings.azure_app_insights_name
+        else HealthCheckStatus.DEGRADED
+    )
 
     return MonitoringStatus(
         azure_openai_status=azure_openai_status,
@@ -99,7 +114,7 @@ async def get_status() -> MonitoringStatus:
         storage_status=storage_status,
         key_vault_status=key_vault_status,
         application_insights_status=app_insights_status,
-        timestamp=datetime.utcnow()
+        timestamp=datetime.utcnow(),
     )
 
 

@@ -10,28 +10,22 @@ This module initializes the FastAPI application with:
 - Health checks
 """
 
+import logging
+from datetime import datetime
+
 from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
-from datetime import datetime
-import logging
 
-from src.config.settings import get_settings
 from src.api import routes, schemas
-from src.api.routes import health
-from src.api.routes import monitoring
-from src.api.routes import chat
-from src.api.routes import rag
-from src.api.routes import prompts
-from src.api.routes import guardrails
-from src.api.routes import observability
+from src.api.routes import chat, guardrails, health, monitoring, observability, prompts, rag
 from src.api.utilities_routes import router as utilities_router
+from src.config.settings import get_settings
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -45,7 +39,7 @@ app = FastAPI(
     version=settings.app_version,
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/openapi.json"
+    openapi_url="/openapi.json",
 )
 
 # Configure CORS
@@ -65,7 +59,7 @@ async def startup_event():
     logger.info(f"Starting {settings.app_name} v{settings.app_version}")
     logger.info(f"Environment: {settings.app_environment}")
     logger.info(f"Log level: {settings.log_level}")
-    
+
     # Log Azure service configuration
     if settings.azure_openai_endpoint:
         logger.info(f"Azure OpenAI configured: {settings.azure_openai_endpoint}")
@@ -89,15 +83,15 @@ async def shutdown_event():
 async def global_exception_handler(request: Request, exc: Exception):
     """Handle all unhandled exceptions"""
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
-    
+
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
             "error_code": "internal_error",
             "message": "An internal error occurred",
             "details": {"path": str(request.url)},
-            "timestamp": datetime.utcnow().isoformat()
-        }
+            "timestamp": datetime.utcnow().isoformat(),
+        },
     )
 
 
@@ -106,15 +100,15 @@ async def global_exception_handler(request: Request, exc: Exception):
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """Handle request validation errors"""
     logger.warning(f"Validation error: {exc.errors()}")
-    
+
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
             "error_code": "validation_error",
             "message": "Invalid request parameters",
             "details": {"errors": exc.errors()},
-            "timestamp": datetime.utcnow().isoformat()
-        }
+            "timestamp": datetime.utcnow().isoformat(),
+        },
     )
 
 
@@ -137,8 +131,8 @@ async def root():
             "prompts": "/prompts/templates",
             "guardrails": "/guardrails/check-input",
             "observability": "/observability/metrics",
-            "utilities": "/utilities"
-        }
+            "utilities": "/utilities",
+        },
     }
 
 
@@ -155,11 +149,11 @@ app.include_router(utilities_router)
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     uvicorn.run(
         "src.main:app",
         host=settings.host,
         port=settings.port,
         reload=settings.reload,
-        log_level=settings.log_level.lower()
+        log_level=settings.log_level.lower(),
     )

@@ -7,8 +7,8 @@ This module provides:
 - Distributed tracing
 """
 
-from typing import Dict, Any, Optional
 import logging
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,7 @@ class TelemetryManager:
         """Initialize Azure Monitor integration"""
         try:
             from src.config.settings import get_settings
+
             settings = get_settings()
 
             if settings.azure_app_insights_instrumentation_key:
@@ -52,10 +53,7 @@ class TelemetryManager:
         logger.info(f"Tracking event: {name} - {properties}")
 
     async def track_metric(
-        self,
-        name: str,
-        value: float,
-        properties: Optional[Dict[str, Any]] = None
+        self, name: str, value: float, properties: Optional[Dict[str, Any]] = None
     ):
         """
         Track a metric
@@ -72,9 +70,7 @@ class TelemetryManager:
         logger.info(f"Tracking metric: {name} = {value}")
 
     async def track_exception(
-        self,
-        exception: Exception,
-        properties: Optional[Dict[str, Any]] = None
+        self, exception: Exception, properties: Optional[Dict[str, Any]] = None
     ):
         """
         Track an exception
@@ -97,7 +93,7 @@ class TelemetryManager:
         target: str,
         duration: float,
         success: bool,
-        properties: Optional[Dict[str, Any]] = None
+        properties: Optional[Dict[str, Any]] = None,
     ):
         """
         Track a dependency call
@@ -127,7 +123,7 @@ class TelemetryManager:
         duration: float,
         response_code: int,
         success: bool,
-        properties: Optional[Dict[str, Any]] = None
+        properties: Optional[Dict[str, Any]] = None,
     ):
         """
         Track a request
@@ -167,10 +163,7 @@ class TelemetryManager:
         return operation_id
 
     async def stop_operation(
-        self,
-        operation_id: str,
-        success: bool = True,
-        properties: Optional[Dict[str, Any]] = None
+        self, operation_id: str, success: bool = True, properties: Optional[Dict[str, Any]] = None
     ):
         """
         Stop a telemetry operation

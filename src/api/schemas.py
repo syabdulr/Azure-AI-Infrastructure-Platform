@@ -4,14 +4,16 @@ Pydantic schemas for API request and response models
 This module contains all data models used for request validation and response serialization.
 """
 
-from pydantic import BaseModel, Field, validator
-from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field, validator
 
 
 class ErrorCode(str, Enum):
     """Error codes for different types of errors"""
+
     VALIDATION_ERROR = "validation_error"
     AUTHENTICATION_ERROR = "authentication_error"
     RATE_LIMIT_ERROR = "rate_limit_error"
@@ -22,6 +24,7 @@ class ErrorCode(str, Enum):
 
 class ErrorResponse(BaseModel):
     """Standard error response model"""
+
     error_code: ErrorCode = Field(..., description="Type of error")
     message: str = Field(..., description="Error message")
     details: Optional[Dict[str, Any]] = Field(None, description="Additional error details")
@@ -32,17 +35,15 @@ class ErrorResponse(BaseModel):
             "example": {
                 "error_code": "validation_error",
                 "message": "Invalid request parameters",
-                "details": {
-                    "field": "max_tokens",
-                    "reason": "must be between 1 and 4096"
-                },
-                "timestamp": "2026-07-25T12:00:00Z"
+                "details": {"field": "max_tokens", "reason": "must be between 1 and 4096"},
+                "timestamp": "2026-07-25T12:00:00Z",
             }
         }
 
 
 class HealthCheckStatus(str, Enum):
     """Health check status"""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -50,6 +51,7 @@ class HealthCheckStatus(str, Enum):
 
 class DependencyHealth(BaseModel):
     """Health status of a specific dependency"""
+
     name: str = Field(..., description="Dependency name")
     status: HealthCheckStatus = Field(..., description="Health status")
     response_time_ms: Optional[float] = Field(None, description="Response time in milliseconds")
@@ -58,10 +60,15 @@ class DependencyHealth(BaseModel):
 
 class HealthResponse(BaseModel):
     """Health check response model"""
+
     status: HealthCheckStatus = Field(..., description="Overall health status")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Health check timestamp")
+    timestamp: datetime = Field(
+        default_factory=datetime.utcnow, description="Health check timestamp"
+    )
     version: str = Field(..., description="Application version")
-    dependencies: List[DependencyHealth] = Field(default_factory=list, description="Dependency health status")
+    dependencies: List[DependencyHealth] = Field(
+        default_factory=list, description="Dependency health status"
+    )
 
     class Config:
         json_schema_extra = {
@@ -70,30 +77,23 @@ class HealthResponse(BaseModel):
                 "timestamp": "2026-07-25T12:00:00Z",
                 "version": "1.0.0",
                 "dependencies": [
-                    {
-                        "name": "azure_openai",
-                        "status": "healthy",
-                        "response_time_ms": 45.2
-                    },
-                    {
-                        "name": "cognitive_search",
-                        "status": "healthy",
-                        "response_time_ms": 32.1
-                    }
-                ]
+                    {"name": "azure_openai", "status": "healthy", "response_time_ms": 45.2},
+                    {"name": "cognitive_search", "status": "healthy", "response_time_ms": 32.1},
+                ],
             }
         }
 
 
 class ChatRequest(BaseModel):
     """Chat completion request model"""
+
     message: str = Field(..., min_length=1, max_length=4000, description="User message")
     conversation_id: Optional[str] = Field(None, description="Conversation ID for context")
     max_tokens: int = Field(1000, ge=1, le=4096, description="Maximum tokens in response")
     temperature: float = Field(0.7, ge=0.0, le=2.0, description="Sampling temperature")
     stream: bool = Field(False, description="Enable streaming response")
 
-    @validator('message')
+    @validator("message")
     def validate_message(cls, v):
         if not v or not v.strip():
             raise ValueError("Message cannot be empty")
@@ -106,13 +106,14 @@ class ChatRequest(BaseModel):
                 "conversation_id": "conv-123",
                 "max_tokens": 1000,
                 "temperature": 0.7,
-                "stream": False
+                "stream": False,
             }
         }
 
 
 class ChatResponse(BaseModel):
     """Chat completion response model"""
+
     response: str = Field(..., description="AI-generated response")
     model: str = Field(..., description="Model used (e.g., gpt-4)")
     conversation_id: str = Field(..., description="Conversation ID")
@@ -134,20 +135,23 @@ class ChatResponse(BaseModel):
                 "completion_tokens": 100,
                 "cost": 0.003,
                 "latency_ms": 234.5,
-                "timestamp": "2026-07-25T12:00:00Z"
+                "timestamp": "2026-07-25T12:00:00Z",
             }
         }
 
 
 class RAGRequest(BaseModel):
     """RAG query request model"""
+
     query: str = Field(..., min_length=1, max_length=2000, description="Search query")
     top_k: int = Field(5, ge=1, le=10, description="Number of top results to return")
     include_citations: bool = Field(True, description="Include citation information")
     min_score: float = Field(0.5, ge=0.0, le=1.0, description="Minimum relevance score")
-    context_window: int = Field(4000, ge=1000, le=16000, description="Maximum context length in tokens")
+    context_window: int = Field(
+        4000, ge=1000, le=16000, description="Maximum context length in tokens"
+    )
 
-    @validator('query')
+    @validator("query")
     def validate_query(cls, v):
         if not v or not v.strip():
             raise ValueError("Query cannot be empty")
@@ -159,13 +163,14 @@ class RAGRequest(BaseModel):
                 "query": "How do I deploy the AI platform to Azure?",
                 "top_k": 5,
                 "include_citations": True,
-                "min_score": 0.5
+                "min_score": 0.5,
             }
         }
 
 
 class SourceDocument(BaseModel):
     """Source document model for RAG responses"""
+
     id: str = Field(..., description="Document ID")
     title: str = Field(..., description="Document title")
     content: str = Field(..., description="Relevant content snippet")
@@ -183,16 +188,14 @@ class SourceDocument(BaseModel):
                 "source": "/docs/deployment.md",
                 "score": 0.92,
                 "citation_id": "source-1",
-                "metadata": {
-                    "created_at": "2026-07-20",
-                    "author": "Abdul Syed"
-                }
+                "metadata": {"created_at": "2026-07-20", "author": "Abdul Syed"},
             }
         }
 
 
 class RAGResponse(BaseModel):
     """RAG query response model"""
+
     answer: str = Field(..., description="AI-generated answer based on retrieved documents")
     sources: List[SourceDocument] = Field(..., description="Retrieved source documents")
     query: str = Field(..., description="Original query")
@@ -212,20 +215,21 @@ class RAGResponse(BaseModel):
                         "content": "To deploy the AI platform, follow these steps...",
                         "source": "/docs/deployment.md",
                         "score": 0.92,
-                        "citation_id": "source-1"
+                        "citation_id": "source-1",
                     }
                 ],
                 "query": "How do I deploy the AI platform to Azure?",
                 "total_sources": 5,
                 "answer_source": "azure_openai",
                 "latency_ms": 312.4,
-                "timestamp": "2026-07-25T12:00:00Z"
+                "timestamp": "2026-07-25T12:00:00Z",
             }
         }
 
 
 class MetricsResponse(BaseModel):
     """Application metrics response model"""
+
     request_count: int = Field(..., description="Total number of requests")
     total_tokens: int = Field(..., description="Total tokens used")
     total_cost: float = Field(..., description="Total cost in USD")
@@ -243,18 +247,21 @@ class MetricsResponse(BaseModel):
                 "avg_latency_ms": 245.3,
                 "error_rate": 0.02,
                 "uptime_seconds": 86400.0,
-                "timestamp": "2026-07-25T12:00:00Z"
+                "timestamp": "2026-07-25T12:00:00Z",
             }
         }
 
 
 class MonitoringStatus(BaseModel):
     """Monitoring status response model"""
+
     azure_openai_status: HealthCheckStatus = Field(..., description="Azure OpenAI status")
     cognitive_search_status: HealthCheckStatus = Field(..., description="Cognitive Search status")
     storage_status: HealthCheckStatus = Field(..., description="Storage status")
     key_vault_status: HealthCheckStatus = Field(..., description="Key Vault status")
-    application_insights_status: HealthCheckStatus = Field(..., description="Application Insights status")
+    application_insights_status: HealthCheckStatus = Field(
+        ..., description="Application Insights status"
+    )
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Status timestamp")
 
     class Config:
@@ -265,22 +272,19 @@ class MonitoringStatus(BaseModel):
                 "storage_status": "healthy",
                 "key_vault_status": "healthy",
                 "application_insights_status": "healthy",
-                "timestamp": "2026-07-25T12:00:00Z"
+                "timestamp": "2026-07-25T12:00:00Z",
             }
         }
 
 
 class StreamChunk(BaseModel):
     """Streaming response chunk model"""
+
     chunk: str = Field(..., description="Text chunk")
     done: bool = Field(False, description="Whether streaming is complete")
     tokens_generated: Optional[int] = Field(None, description="Total tokens generated so far")
 
     class Config:
         json_schema_extra = {
-            "example": {
-                "chunk": "The AI platform",
-                "done": False,
-                "tokens_generated": 4
-            }
+            "example": {"chunk": "The AI platform", "done": False, "tokens_generated": 4}
         }

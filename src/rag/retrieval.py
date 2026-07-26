@@ -7,8 +7,8 @@ This module provides:
 - Citation generation
 """
 
-from typing import List, Dict, Any
 import logging
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -20,11 +20,7 @@ class RetrievalManager:
         """Initialize retrieval manager"""
         pass
 
-    def calculate_relevance_score(
-        self,
-        query: str,
-        document: str
-    ) -> float:
+    def calculate_relevance_score(self, query: str, document: str) -> float:
         """
         Calculate relevance score between query and document
 
@@ -47,11 +43,7 @@ class RetrievalManager:
 
         return min(1.0, relevance)
 
-    def rank_results(
-        self,
-        results: List[Dict[str, Any]],
-        query: str
-    ) -> List[Dict[str, Any]]:
+    def rank_results(self, results: List[Dict[str, Any]], query: str) -> List[Dict[str, Any]]:
         """
         Rank search results by relevance
 
@@ -65,21 +57,14 @@ class RetrievalManager:
         # Calculate relevance scores
         for result in results:
             if "score" not in result:
-                result["score"] = self.calculate_relevance_score(
-                    query,
-                    result.get("content", "")
-                )
+                result["score"] = self.calculate_relevance_score(query, result.get("content", ""))
 
         # Sort by score
         ranked = sorted(results, key=lambda x: x.get("score", 0), reverse=True)
 
         return ranked
 
-    def generate_citation(
-        self,
-        document: Dict[str, Any],
-        citation_id: str
-    ) -> str:
+    def generate_citation(self, document: Dict[str, Any], citation_id: str) -> str:
         """
         Generate citation for a document
 
@@ -96,10 +81,7 @@ class RetrievalManager:
         return f"[{citation_id}] {title} ({source})"
 
     def select_top_k(
-        self,
-        results: List[Dict[str, Any]],
-        top_k: int,
-        min_score: float = 0.5
+        self, results: List[Dict[str, Any]], top_k: int, min_score: float = 0.5
     ) -> List[Dict[str, Any]]:
         """
         Select top-k results with minimum score

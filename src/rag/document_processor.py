@@ -7,9 +7,9 @@ This module provides:
 - Metadata extraction
 """
 
-from typing import List, Dict, Any, Optional
 import logging
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -23,10 +23,7 @@ class DocumentProcessor:
         self.chunk_overlap = 200
 
     def chunk_text(
-        self,
-        text: str,
-        chunk_size: Optional[int] = None,
-        chunk_overlap: Optional[int] = None
+        self, text: str, chunk_size: Optional[int] = None, chunk_overlap: Optional[int] = None
     ) -> List[str]:
         """
         Split text into chunks
@@ -53,11 +50,7 @@ class DocumentProcessor:
 
         return chunks
 
-    def extract_metadata(
-        self,
-        text: str,
-        source: str
-    ) -> Dict[str, Any]:
+    def extract_metadata(self, text: str, source: str) -> Dict[str, Any]:
         """
         Extract metadata from document
 
@@ -72,14 +65,11 @@ class DocumentProcessor:
             "source": source,
             "word_count": len(text.split()),
             "character_count": len(text),
-            "created_at": datetime.utcnow().isoformat()
+            "created_at": datetime.utcnow().isoformat(),
         }
 
     async def process_document(
-        self,
-        text: str,
-        source: str,
-        chunk_size: Optional[int] = None
+        self, text: str, source: str, chunk_size: Optional[int] = None
     ) -> List[Dict[str, Any]]:
         """
         Process a document into chunks with metadata
@@ -97,11 +87,13 @@ class DocumentProcessor:
 
         processed_chunks = []
         for i, chunk in enumerate(chunks):
-            processed_chunks.append({
-                "id": f"{source}-chunk-{i}",
-                "content": chunk,
-                "chunk_index": i,
-                "metadata": metadata
-            })
+            processed_chunks.append(
+                {
+                    "id": f"{source}-chunk-{i}",
+                    "content": chunk,
+                    "chunk_index": i,
+                    "metadata": metadata,
+                }
+            )
 
         return processed_chunks
