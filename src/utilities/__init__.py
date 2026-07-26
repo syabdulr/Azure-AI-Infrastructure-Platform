@@ -18,16 +18,11 @@ Email: syabdulr6@gmail.com
 GitHub: syabdulr
 """
 
+from .analytics import UsageAnalytics
 from .bill_processor import BillProcessor
 from .regulation_search import RegulationSearch
 from .support_automation import SupportAutomation
-from .analytics import UsageAnalytics
 
-__all__ = [
-    "BillProcessor",
-    "RegulationSearch",
-    "SupportAutomation",
-    "UsageAnalytics"
-]
+__all__ = ["BillProcessor", "RegulationSearch", "SupportAutomation", "UsageAnalytics"]
 
 __version__ = "1.0.0"
