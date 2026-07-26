@@ -26,6 +26,7 @@ from src.api.routes import rag
 from src.api.routes import prompts
 from src.api.routes import guardrails
 from src.api.routes import observability
+from src.api.utilities_routes import router as utilities_router
 
 # Configure logging
 logging.basicConfig(
@@ -135,7 +136,8 @@ async def root():
             "monitoring": "/monitoring/metrics",
             "prompts": "/prompts/templates",
             "guardrails": "/guardrails/check-input",
-            "observability": "/observability/metrics"
+            "observability": "/observability/metrics",
+            "utilities": "/utilities"
         }
     }
 
@@ -148,6 +150,7 @@ app.include_router(rag.router)
 app.include_router(prompts.router)
 app.include_router(guardrails.router)
 app.include_router(observability.router)
+app.include_router(utilities_router)
 
 
 if __name__ == "__main__":
