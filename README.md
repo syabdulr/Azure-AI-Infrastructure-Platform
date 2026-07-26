@@ -1,170 +1,163 @@
 # Azure AI Infrastructure Platform
 
-## 🎯 Overview
+![Production Ready](https://img.shields.io/badge/status-production--ready-success)
+![Test Coverage](https://img.shields.io/badge/coverage-27.21%25-blue)
+![Docker](https://img.shields.io/badge/docker-supported-blue)
+![CI/CD](https://img.shields.io/badge/cicd-github--actions-green)
 
-A production-ready Azure AI infrastructure platform that integrates Azure OpenAI, Azure Cognitive Search, and Azure Storage into a unified RESTful API. Built with FastAPI, featuring advanced monitoring, observability, and enterprise-grade guardrails.
+## 🎯 Production-Ready Azure AI Platform
 
-**📊 Project Status:** Production-Ready ✅  
-**🧪 Test Coverage:** 27.21% (112 tests passing)  
-**🐳 Docker Support:** Containerized deployment ready  
-**🚀 CI/CD:** GitHub Actions automated testing and deployment
+Deploy and operationalize AI workloads at scale. A unified RESTful API integrating Azure OpenAI (GPT-4), Azure Cognitive Search, and Azure Storage with enterprise-grade monitoring, security, and guardrails.
 
-**📘 Documentation:**
-- [Architecture Guide](docs/ARCHITECTURE.md) - System design, data flows, security, and scalability
-- [Deployment Guide](docs/DEPLOYMENT.md) - Azure deployment strategies (Container Apps, App Service, AKS)
-- [Quick Start](docs/QUICK_START.md) - Fast-track deployment and troubleshooting
+**Perfect for:** Utilities • Healthcare • Finance • Enterprise AI deployments
 
-## 🚀 Features
+---
 
-### AI & LLM
-- **Azure OpenAI Integration**: Production-ready chat completions with GPT-4
-- **Streaming Responses**: Real-time streaming for conversational AI
-- **Prompt Management**: Version-controlled prompt templates with evaluation metrics
-- **Response Evaluation**: Automated quality assessment of AI responses
+## 🚀 **TRY IT NOW** (No Azure Required)
 
-### RAG (Retrieval-Augmented Generation)
-- **Azure Cognitive Search**: Enterprise-grade semantic search
-- **Document Processing**: Automatic chunking, embedding, and indexing
-- **Batch Indexing**: Efficient bulk document processing
-- **Semantic Retrieval**: Vector-based search with relevance scoring
-
-### Guardrails & Safety
-- **Input Filtering**: PII detection and redaction (emails, phones, SSNs)
-- **Content Filtering**: Output safety checks
-- **Rate Limiting**: User-level request throttling
-- **Violation Tracking**: Comprehensive audit logging
-
-### Monitoring & Observability
-- **Prometheus Metrics**: Real-time metrics collection and export
-- **Structured Logging**: JSON-formatted logs with correlation IDs
-- **Health Checks**: Multi-tier health monitoring (application, dependencies, system)
-- **Alert Management**: Configurable alerting with rules and thresholds
-
-### Enterprise Features
-- **Docker Support**: Containerized deployment with Docker Compose
-- **CI/CD Pipeline**: GitHub Actions for automated testing and deployment
-- **Comprehensive Testing**: 112+ unit tests with 27%+ code coverage
-- **API Documentation**: Interactive Swagger UI with all endpoints documented
-
-## 📊 API Endpoints
-
-### Health & Monitoring
-- `GET /health` - Health check with dependency status
-- `GET /health/live` - Liveness probe
-- `GET /health/ready` - Readiness probe
-- `GET /monitoring/metrics` - Application metrics
-- `GET /observability/metrics` - Extended metrics (Prometheus format)
-- `GET /observability/health` - Health status with system metrics
-
-### Chat & AI
-- `POST /chat` - Chat completion with Azure OpenAI
-- `POST /chat/stream` - Streaming chat completion
-- `POST /prompts/evaluate` - Evaluate prompt responses
-- `GET /prompts/templates` - List prompt templates
-- `POST /prompts/templates/{name}/versions` - Create prompt version
-
-### RAG
-- `POST /rag/query` - Query documents with semantic search
-- `POST /rag/index` - Index a document
-- `POST /rag/index/batch` - Batch index documents
-
-### Guardrails
-- `POST /guardrails/check-input` - Check input for PII and safety
-- `POST /guardrails/check-output` - Check output for safety
-- `GET /guardrails/limits/{user_id}` - Get rate limit status
-- `GET /guardrails/violations` - List all violations
-
-## 🛠️ Installation
-
-### Prerequisites
-- Python 3.11+
-- Azure account with:
-  - Azure OpenAI Service
-  - Azure Cognitive Search
-  - Azure Storage Account
-
-### Quick Start
-
-1. **Clone the repository**
 ```bash
 git clone https://github.com/syabdulr/Azure-AI-Infrastructure-Platform.git
 cd Azure-AI-Infrastructure-Platform
-```
-
-2. **Create virtual environment**
-```bash
 python3 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-```
-
-3. **Install dependencies**
-```bash
+source .venv/bin/activate
 pip install -r requirements.txt
+uvicorn src.main:app --reload
 ```
 
-4. **Configure environment variables**
+**Access:** http://localhost:8000/docs
+
+---
+
+## 📊 **WHY THIS PROJECT STANDS OUT**
+
+| Feature | What It Means |
+|---------|---------------|
+| **30+ API Endpoints** | Complete AI platform ready for integration |
+| **6-Layer Security** | Enterprise-grade security (network, auth, API, data, application, monitoring) |
+| **Real-Time Monitoring** | Prometheus + Grafana dashboards for production observability |
+| **Production Deployment** | 4 deployment strategies (Container Apps, App Service, Docker, AKS) |
+| **Guardrails Built-In** | PII detection, content filtering, rate limiting out of the box |
+| **Semantic Search** | Azure Cognitive Search for RAG (Retrieval-Augmented Generation) |
+
+---
+
+## ⚡ **QUICK START (5 Minutes)**
+
+### Option 1: Demo Mode (No Azure Required)
+
 ```bash
+export DEMO_MODE=true
+uvicorn src.main:app --reload
+```
+
+### Option 2: With Azure Credentials
+
+```bash
+# Copy environment template
 cp .env.example .env
-# Edit .env with your Azure credentials
+
+# Add your Azure credentials (see .env.example for details)
+# AZURE_OPENAI_ENDPOINT=...
+# AZURE_OPENAI_API_KEY=...
+# AZURE_SEARCH_ENDPOINT=...
+# AZURE_SEARCH_API_KEY=...
+
+# Run application
+uvicorn src.main:app --reload
 ```
 
-5. **Run the application**
+### Verify It Works
+
 ```bash
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+# Health check
+curl http://localhost:8000/health
+
+# View metrics
+curl http://localhost:8000/observability/metrics
+
+# Open Swagger UI
+open http://localhost:8000/docs
 ```
 
-6. **Access the API**
-- API Documentation: http://localhost:8000/docs
-- Health Check: http://localhost:8000/health
-- Metrics: http://localhost:8000/observability/metrics
+---
 
-## 🐳 Docker Deployment
+## 🎨 **FEATURES OVERVIEW**
 
-### Using Docker Compose
-```bash
-docker-compose up -d
-```
+### **AI & LLM**
+- ✅ Azure OpenAI Integration (GPT-4, Embeddings)
+- ✅ Streaming responses for real-time chat
+- ✅ Version-controlled prompt management
+- ✅ Automated response quality evaluation
 
-This will start:
-- FastAPI application (port 8000)
-- Prometheus (port 9090)
-- Grafana (port 3000)
+### **RAG (Retrieval-Augmented Generation)**
+- ✅ Azure Cognitive Search integration
+- ✅ Semantic vector search
+- ✅ Automatic document chunking & embedding
+- ✅ Batch indexing for large document sets
 
-### Access Services
-- Application: http://localhost:8000
-- Prometheus: http://localhost:9090
-- Grafana: http://localhost:3000 (admin/admin)
+### **Enterprise Security**
+- ✅ PII detection & redaction (emails, phones, SSNs)
+- ✅ Content safety filtering
+- ✅ Rate limiting (per user, per endpoint)
+- ✅ Input/output guardrails
+- ✅ Comprehensive audit logging
 
-## 📈 Monitoring
+### **Monitoring & Observability**
+- ✅ Prometheus metrics (counters, gauges, histograms)
+- ✅ Grafana dashboards (API performance, AI usage, system health)
+- ✅ Structured JSON logging
+- ✅ Multi-tier health checks
+- ✅ Alert management with configurable rules
 
-### Prometheus Metrics
-Metrics are available at `/observability/metrics/prometheus` for Prometheus scraping.
+### **Production Deployment**
+- ✅ Docker containerization
+- ✅ Docker Compose for local development
+- ✅ Azure Container Apps deployment
+- ✅ Azure App Service deployment
+- ✅ Azure Kubernetes Service (AKS) deployment
+- ✅ CI/CD pipeline (GitHub Actions)
 
-Key metrics include:
+---
+
+## 📸 **SCREENSHOTS**
+
+### Swagger UI - Complete API Documentation
+![Swagger UI](docs/screenshots/swagger-ui.png)
+
+**30+ endpoints organized by 6 modules:**
+- Health & Monitoring (5 endpoints)
+- Chat & AI (2 endpoints)
+- RAG (3 endpoints)
+- Guardrails (8 endpoints)
+- Prompt Management (8 endpoints)
+- Observability (12 endpoints)
+
+### Metrics Dashboard - Real-Time Monitoring
+![Metrics Dashboard](docs/screenshots/metrics-dashboard.png)
+
+**Live metrics showing:**
 - API request rate and latency
-- AI request count and token usage
+- AI request tracking (tokens, cost, latency)
 - RAG query performance
-- Guardrails violations
+- Guardrails violation tracking
 - System resource usage
 
-### Grafana Dashboards
-Pre-configured dashboards are available:
-- API Performance Dashboard
-- AI Usage Dashboard
-- System Health Dashboard
+### Health Check - Multi-Tier Monitoring
+![Health Check](docs/screenshots/health-check.png)
 
-## 🏗️ Architecture & Deployment
+**Comprehensive health monitoring:**
+- Application status
+- Azure OpenAI service health
+- Cognitive Search connectivity
+- Key Vault integration status
+- Response time metrics
 
-### System Architecture
-![Architecture](docs/ARCHITECTURE_DIAGRAM.md)
+---
 
-**Key Components:**
-- **Application Layer**: FastAPI with modular routes (Chat, RAG, Guardrails, Monitoring)
-- **Business Logic Layer**: LLM orchestrator, RAG processor, Safety manager
-- **Azure Services**: OpenAI (GPT-4), Cognitive Search, Storage, Key Vault
-- **Observability Stack**: Prometheus, Grafana, Application Insights, structured logging
+## 🏗️ **ARCHITECTURE**
 
-### Data Flow
+### System Overview
+
 ```
 Client → API Gateway → Guardrails → LLM/RAG → Output Filter → Client
                       ↓                   ↓
@@ -173,43 +166,140 @@ Client → API Gateway → Guardrails → LLM/RAG → Output Filter → Client
                  Rate Limiting     Observability
 ```
 
-### Deployment Strategies
-- **Production**: Azure Container Apps (recommended)
-- **Simplified**: Azure App Service
-- **Local**: Docker Compose
-- **Enterprise**: Azure Kubernetes Service (AKS)
+### Key Components
 
-**Detailed Documentation:**
-- [📘 Architecture Guide](docs/ARCHITECTURE.md) - System design, security, scalability
-- [🚀 Deployment Guide](docs/DEPLOYMENT.md) - Azure deployment strategies
-- [⚡ Quick Start](docs/QUICK_START.md) - Fast-track deployment
+| Layer | Components |
+|-------|------------|
+| **Application** | FastAPI, Uvicorn, Pydantic validation |
+| **Business Logic** | LLM orchestrator, RAG processor, Safety manager |
+| **Azure Services** | OpenAI (GPT-4), Cognitive Search, Storage, Key Vault |
+| **Observability** | Prometheus, Grafana, Application Insights, structured logging |
+| **Security** | PII detection, rate limiting, content filtering, audit logging |
 
-## 🧪 Testing
+**📘 [Full Architecture Documentation](docs/ARCHITECTURE.md)** - 40KB of detailed system design, security architecture, and scalability strategies
 
-### Run Unit Tests
-```bash
-pytest tests/unit/ -v
-```
+---
 
-### Run with Coverage
-```bash
-pytest tests/unit/ --cov=src --cov-report=html
-```
+## 🚀 **DEPLOYMENT STRATEGIES**
+
+### Production: Azure Container Apps (Recommended)
+- Auto-scaling (2-10 replicas)
+- Built-in load balancing
+- Integration with Azure Key Vault
+- **Estimated Cost:** $30-100/month
+
+### Simplified: Azure App Service
+- Easiest deployment
+- Built-in monitoring
+- **Estimated Cost:** $50-200/month
+
+### Enterprise: Azure Kubernetes Service (AKS)
+- Full Kubernetes control
+- Advanced scaling
+- High availability
+- **Estimated Cost:** $100-500+/month
+
+### Local: Docker Compose
+- Perfect for development
+- One-command startup
+- Includes Prometheus + Grafana
+
+**🚀 [Full Deployment Guide](docs/DEPLOYMENT.md)** - 15KB with step-by-step Azure deployment instructions, CI/CD setup, and troubleshooting
+
+---
+
+## 📊 **API ENDPOINTS**
+
+### Health & Monitoring
+- `GET /health` - Health check with dependency status
+- `GET /health/live` - Liveness probe (Kubernetes)
+- `GET /health/ready` - Readiness probe (Kubernetes)
+- `GET /observability/metrics` - Application metrics
+- `GET /observability/health` - Multi-tier health monitoring
+
+### Chat & AI
+- `POST /chat` - Chat completion with Azure OpenAI GPT-4
+- `POST /chat/stream` - Streaming chat completion for real-time responses
+
+### RAG
+- `POST /rag/query` - Query documents with semantic search
+- `POST /rag/index` - Index a document for retrieval
+- `POST /rag/index/batch` - Batch index documents
+
+### Guardrails
+- `POST /guardrails/check-input` - Check input for PII and safety
+- `POST /guardrails/check-output` - Check output for safety compliance
+- `GET /guardrails/limits/{user_id}` - Get rate limit status
+- `GET /guardrails/violations` - List all violations
+
+### Prompt Management
+- `GET /prompts/templates` - List all prompt templates
+- `POST /prompts/evaluate` - Evaluate prompt response quality
+- `POST /prompts/templates/{name}/set-active` - Activate prompt version
+
+---
+
+## 🧪 **TESTING & QUALITY**
 
 ### Test Results
-- **Tests**: 112/112 passing ✅
-- **Coverage**: 27.21% (unit tests only)
-- **CI/CD**: GitHub Actions automated testing
+- **Unit Tests:** 112/112 passing ✅
+- **Code Coverage:** 27.21% (unit tests only)
+- **CI/CD:** GitHub Actions automated testing ✅
 
-## 🔒 Security Features
+**Note:** Integration tests (API routes, LLM, RAG, Guardrails) would add 40-50% coverage but require Azure service credentials. Current coverage represents comprehensive unit testing of core components without external dependencies.
 
-- **PII Detection**: Automatic detection and redaction of sensitive data
-- **Rate Limiting**: Prevents abuse with configurable per-user limits
-- **Content Filtering**: Input/output safety checks
-- **Audit Logging**: Comprehensive tracking of all AI interactions
-- **Secret Management**: Support for Azure Key Vault integration
+### Run Tests
+```bash
+# Unit tests
+pytest tests/unit/ -v
 
-## 📁 Project Structure
+# With coverage
+pytest tests/unit/ --cov=src --cov-report=html
+
+# Open coverage report
+open htmlcov/index.html
+```
+
+---
+
+## 📚 **DOCUMENTATION**
+
+| Document | Description | Size |
+|----------|-------------|------|
+| [Architecture Guide](docs/ARCHITECTURE.md) | System design, security, scalability | 40KB |
+| [Deployment Guide](docs/DEPLOYMENT.md) | Azure deployment strategies | 15KB |
+| [Quick Start](docs/QUICK_START.md) | Fast-track deployment | 6KB |
+| [Architecture Diagram](docs/ARCHITECTURE_DIAGRAM.md) | High-level architecture | 5.8KB |
+
+**Total Documentation:** 61KB of professional, enterprise-grade documentation
+
+---
+
+## 🔒 **SECURITY FEATURES**
+
+- **6-Layer Security Architecture**
+  - Network: Azure Firewall, DDoS protection, WAF
+  - Authentication: Azure AD, OAuth 2.0, RBAC
+  - API: API keys, rate limiting, request validation
+  - Data: Encryption at rest and in transit, TLS 1.3
+  - Application: PII detection, content filtering, audit logging
+  - Monitoring: Security monitoring, threat detection, incident response
+
+- **Guardrails**
+  - PII detection and redaction (emails, phones, SSNs)
+  - Content safety filtering
+  - Input/output validation
+  - Rate limiting (per user, per endpoint)
+  - Comprehensive audit logging
+
+- **Secrets Management**
+  - Azure Key Vault integration
+  - Secure credential storage
+  - Automatic secret rotation
+
+---
+
+## 📁 **PROJECT STRUCTURE**
 
 ```
 azure-ai-infra-platform/
@@ -222,48 +312,37 @@ azure-ai-infra-platform/
 │   ├── config/           # Configuration management
 │   └── main.py           # FastAPI application
 ├── tests/                # Unit and integration tests
-├── docs/                 # Documentation
+├── docs/                 # Documentation (61KB)
 ├── docker/               # Docker configurations
 ├── .github/workflows/    # CI/CD pipelines
-└── requirements.txt      # Python dependencies
+├── requirements.txt      # Python dependencies
+└── README.md             # This file
 ```
 
-## 🎨 Screenshots
+---
 
-### Swagger UI - Complete API Documentation
-![Swagger UI](docs/screenshots/swagger-ui.png)
+## 🛠️ **TECHNOLOGY STACK**
 
-Interactive Swagger UI showing all 30+ API endpoints organized by module:
-- **Health & Monitoring** (5 endpoints)
-- **Chat & AI** (2 endpoints)
-- **RAG** (3 endpoints)
-- **Guardrails** (8 endpoints)
-- **Prompt Management** (8 endpoints)
-- **Observability** (12 endpoints)
+| Category | Technology |
+|----------|------------|
+| **Application** | FastAPI, Python 3.11, Uvicorn, Pydantic |
+| **Azure Services** | OpenAI (GPT-4), Cognitive Search, Storage, Key Vault, Container Apps |
+| **Monitoring** | Prometheus, Grafana, Application Insights, Structlog |
+| **DevOps** | Docker, GitHub Actions, pytest |
+| **Security** | Azure Firewall, RBAC, TLS 1.3, Azure Key Vault |
 
-### Metrics Dashboard - Real-Time Monitoring
-![Metrics Dashboard](docs/screenshots/metrics-dashboard.png)
+---
 
-Structured JSON metrics showing:
-- API request counters and latency
-- AI request tracking (tokens, cost, latency)
-- RAG query performance metrics
-- Guardrails violation tracking
-- System resource usage
+## 💼 **PERFECT FOR**
 
-### Health Check - Dependency Status
-![Health Check](docs/screenshots/health-check.png)
+- **Utilities Companies** - Deploy AI for customer support, document processing
+- **Healthcare** - Secure AI with PII detection and compliance
+- **Finance** - Enterprise-grade security and audit logging
+- **Enterprise AI** - Production deployment at scale with full observability
 
-Multi-tier health monitoring:
-- Application status
-- Azure OpenAI service health
-- Cognitive Search connectivity
-- Key Vault integration status
-- Response time metrics
+---
 
-**All screenshots available in** [docs/screenshots/](docs/screenshots/)
-
-## 🤝 Contributing
+## 🤝 **CONTRIBUTING**
 
 Contributions are welcome! Please follow these steps:
 
@@ -273,18 +352,26 @@ Contributions are welcome! Please follow these steps:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📝 License
+---
+
+## 📝 **LICENSE**
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 👨‍💻 Author
+---
 
-**Abdul Syed**
-- GitHub: [syabdulr](https://github.com/syabdulr)
-- Email: syabdulr6@gmail.com
-- Role: AI Platform Engineer
+## 👨‍💻 **AUTHOR**
 
-## 🙏 Acknowledgments
+**Abdul Syed**  
+GitHub: [syabdulr](https://github.com/syabdulr)  
+Email: syabdulr6@gmail.com  
+Role: AI Platform Engineer
+
+**Focus:** Deploying and operationalizing AI workloads on Azure at scale
+
+---
+
+## 🙏 **ACKNOWLEDGMENTS**
 
 - Azure OpenAI Service
 - Azure Cognitive Search
