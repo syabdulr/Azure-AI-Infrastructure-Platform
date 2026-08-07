@@ -1,5 +1,7 @@
 # Azure AI Infrastructure Platform
 
+> **Note:** This platform was developed as internal infrastructure to support FXPE (Autonomous Multi-Agent Trading Platform) operations. It provides utilities AI workflows, RAG capabilities, and observability to power FXPE's internal operations and business processes.
+
 ![Production Ready](https://img.shields.io/badge/status-production--ready-success)
 ![Docker](https://img.shields.io/badge/docker-supported-blue)
 ![CI/CD](https://img.shields.io/badge/cicd-github--actions-green)
