@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            background-color: #020617;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 800px;
+        }
+        .mermaid {
+            max-width: 1000px;
+        }
+    </style>
+</head>
+<body>
+    <div class="mermaid">
+flowchart TD
+    A[Client Application] -->|Send Request| B[Provider Registry]
+
+    B --> C{Routing Strategy}
+    C -->|Round Robin| D[Provider 1]
+    C -->|Cost Optimized| E[Provider 2]
+    C -->|Performance Based| F[Provider 3]
+    C -->|Health Based| G[Healthiest Provider]
+
+    D --> H[Health Check]
+    E --> I[Health Check]
+    F --> J[Health Check]
+    G --> K[Health Check]
+
+    H -->|Healthy| L[Azure OpenAI API]
+    I -->|Healthy| M[OpenAI API]
+    J -->|Healthy| N[Alternate Provider]
+    K -->|Healthy| O[Selected Provider]
+
+    H -->|Unhealthy| P[Circuit Breaker Opens]
+    I -->|Unhealthy| P
+    J -->|Unhealthy| P
+    K -->|Unhealthy| P
+
+    P -->|Auto Failover| Q[Fallback Provider]
+
+    L --> R[Normalize Response]
+    M --> R
+    N --> R
+    O --> R
+    Q --> R
+
+    R --> S[Metric Collection]
+    S --> T[Return Response]
+
+    style A fill:#0f172a,stroke:#22d3ee,color:#f1f5f9
+    style B fill:#0f172a,stroke:#34d399,color:#f1f5f9
+    style C fill:#0f172a,stroke:#fbbf24,color:#f1f5f9
+    style D fill:#1e3a5f,stroke:#3b82f6,color:#f1f5f9
+    style E fill:#1e3a5f,stroke:#3b82f6,color:#f1f5f9
+    style F fill:#1e3a5f,stroke:#3b82f6,color:#f1f5f9
+    style G fill:#1e3a5f,stroke:#3b82f6,color:#f1f5f9
+    style H fill:#064e3b,stroke:#10b981,color:#f1f5f9
+    style I fill:#064e3b,stroke:#10b981,color:#f1f5f9
+    style J fill:#064e3b,stroke:#10b981,color:#f1f5f9
+    style K fill:#064e3b,stroke:#10b981,color:#f1f5f9
+    style P fill:#450a0a,stroke:#ef4444,color:#f1f5f9
+    style L fill:#064e3b,stroke:#10b981,color:#f1f5f9
+    style M fill:#064e3b,stroke:#10b981,color:#f1f5f9
+    style N fill:#064e3b,stroke:#10b981,color:#f1f5f9
+    style O fill:#064e3b,stroke:#10b981,color:#f1f5f9
+    style Q fill:#064e3b,stroke:#10b981,color:#f1f5f9
+    style R fill:#0f172a,stroke:#a855f7,color:#f1f5f9
+    style S fill:#0f172a,stroke:#a855f7,color:#f1f5f9
+    style T fill:#0f172a,stroke:#22d3ee,color:#f1f5f9
+
+    linkStyle default stroke:#4a9eff,stroke-width:2px;
+    </div>
+</body>
+</html>
