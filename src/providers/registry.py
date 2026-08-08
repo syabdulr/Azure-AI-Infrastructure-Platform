@@ -38,12 +38,13 @@ class ProviderRegistry:
         self._round_robin_index = 0
         self._lock = asyncio.Lock()
 
-    async def register(self, provider: Provider) -> None:
+    async def register(self, provider: Provider, skip_health_check: bool = False) -> None:
         """
         Register a provider.
 
         Args:
             provider: Provider instance to register
+            skip_health_check: If True, skip the initial health check (useful for testing)
         """
         async with self._lock:
             if provider.config.name in self._providers:
@@ -54,8 +55,9 @@ class ProviderRegistry:
             self._providers[provider.config.name] = provider
             logger.info(f"Registered provider: {provider.config.name}")
 
-            # Perform initial health check
-            await self._check_provider_health(provider)
+            # Perform initial health check (unless skipped)
+            if not skip_health_check:
+                await self._check_provider_health(provider)
 
     async def unregister(self, provider_name: str) -> None:
         """
@@ -69,7 +71,9 @@ class ProviderRegistry:
                 raise ValueError(f"Provider {provider_name} not registered")
 
             del self._providers[provider_name]
-            del self._health_check_results[provider_name]
+            # Health check results may not exist if health checks were skipped
+            if provider_name in self._health_check_results:
+                del self._health_check_results[provider_name]
             logger.info(f"Unregistered provider: {provider_name}")
 
     def get_provider(self, name: str) -> Optional[Provider]:
@@ -401,7 +405,8 @@ class ProviderRegistry:
         )
 
         provider = sorted_providers[0]
-        model = list(provider.get_available_models().keys())[0]
+        models_dict = provider.get_available_models()
+        model = list(models_dict.values())[0]
         alternate_providers = [p.config.name for p in sorted_providers[1:5]]
 
         return RoutingDecision(

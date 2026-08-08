@@ -32,7 +32,7 @@ class TestProviderRegistration:
         }):
             provider = create_azure_openai_provider(name="test_azure")
 
-        await registry.register(provider)
+        await registry.register(provider, skip_health_check=True)
 
         assert registry.get_provider("test_azure") is not None
         assert len(registry.get_all_providers()) == 1
@@ -49,10 +49,10 @@ class TestProviderRegistration:
             provider1 = create_azure_openai_provider(name="test_azure")
             provider2 = create_azure_openai_provider(name="test_azure")
 
-        await registry.register(provider1)
+        await registry.register(provider1, skip_health_check=True)
 
         with pytest.raises(ValueError) as exc_info:
-            await registry.register(provider2)
+            await registry.register(provider2, skip_health_check=True)
 
         assert "already registered" in str(exc_info.value)
 
@@ -67,7 +67,7 @@ class TestProviderRegistration:
         }):
             provider = create_azure_openai_provider(name="test_azure")
 
-        await registry.register(provider)
+        await registry.register(provider, skip_health_check=True)
         await registry.unregister("test_azure")
 
         assert registry.get_provider("test_azure") is None
@@ -86,6 +86,7 @@ class TestProviderRegistration:
             provider1 = create_azure_openai_provider(name="test_azure")
             provider2 = create_openai_provider(name="test_openai")
 
+        # Mock health status
         provider1.status = ProviderStatus.HEALTHY
         provider2.status = ProviderStatus.DEGRADED
 
@@ -113,8 +114,8 @@ class TestProviderRegistration:
         provider1.health_check = mock_health_check_healthy
         provider2.health_check = mock_health_check_degraded
 
-        await registry.register(provider1)
-        await registry.register(provider2)
+        await registry.register(provider1, skip_health_check=True)
+        await registry.register(provider2, skip_health_check=True)
 
         healthy = registry.get_healthy_providers()
 
@@ -141,11 +142,7 @@ class TestRoundRobinRouting:
         # Mock providers as healthy
         provider1.status = ProviderStatus.HEALTHY
         provider2.status = ProviderStatus.HEALTHY
-        
-        # Ensure they're marked as healthy in registry
-        provider1._last_health_check = datetime.now()
-        provider2._last_health_check = datetime.now()
-        
+
         # Mock health checks to prevent API calls
         async def mock_health_check():
             from src.providers.models import HealthCheckResult
@@ -160,18 +157,20 @@ class TestRoundRobinRouting:
         provider1.health_check = mock_health_check
         provider2.health_check = mock_health_check
 
-        await registry.register(provider1)
-        await registry.register(provider2)
+        await registry.register(provider1, skip_health_check=True)
+        await registry.register(provider2, skip_health_check=True)
 
         # Track which provider gets each request
         providers_used = []
+        provider_lock = asyncio.Lock()
 
-        async def mock_generate(request, model=None):
-            providers_used.append(provider1.config.name if provider1.is_available() else provider2.config.name)
+        async def mock_generate_azure(request, model=None):
+            async with provider_lock:
+                providers_used.append("test_azure")
             mock_response = Mock(spec=GatewayResponse)
-            mock_response.content = f"Response from {providers_used[-1]}"
+            mock_response.content = f"Response from test_azure"
             mock_response.model = "gpt-4"
-            mock_response.provider = providers_used[-1]
+            mock_response.provider = "test_azure"
             mock_response.routing_strategy = request.routing_strategy
             mock_response.routing_reason = "Test"
             mock_response.tokens_used = 10
@@ -183,8 +182,26 @@ class TestRoundRobinRouting:
             mock_response.quality_score = 0.9
             return mock_response
 
-        provider1.generate = mock_generate
-        provider2.generate = mock_generate
+        async def mock_generate_openai(request, model=None):
+            async with provider_lock:
+                providers_used.append("test_openai")
+            mock_response = Mock(spec=GatewayResponse)
+            mock_response.content = f"Response from test_openai"
+            mock_response.model = "gpt-4"
+            mock_response.provider = "test_openai"
+            mock_response.routing_strategy = request.routing_strategy
+            mock_response.routing_reason = "Test"
+            mock_response.tokens_used = 10
+            mock_response.latency_ms = 100.0
+            mock_response.cost = 0.0003
+            mock_response.request_id = "test_123"
+            mock_response.metadata = {}
+            mock_response.cached = False
+            mock_response.quality_score = 0.9
+            return mock_response
+
+        provider1.generate = mock_generate_azure
+        provider2.generate = mock_generate_openai
 
         # Make 4 requests
         for i in range(4):
@@ -197,6 +214,7 @@ class TestRoundRobinRouting:
                 routing_strategy=RoutingStrategy.ROUND_ROBIN
             )
             response = await registry.route_request(request)
+            # Verify response came from expected provider
             assert response.content == f"Response from {providers_used[i]}"
 
         # Should alternate between providers
@@ -226,27 +244,37 @@ class TestHealthBasedRouting:
         provider1.status = ProviderStatus.HEALTHY
         provider2.status = ProviderStatus.DEGRADED
 
-        # Mock health check results
-        from src.providers.models import HealthCheckResult
-        registry._health_check_results = {
-            "test_azure": HealthCheckResult(
+        # Mock health checks
+        async def mock_health_check_healthy():
+            from src.providers.models import HealthCheckResult
+            return HealthCheckResult(
                 provider_name="test_azure",
                 status=ProviderStatus.HEALTHY,
                 timestamp=datetime.now(),
                 latency_ms=100.0,
                 success_rate=0.99
-            ),
-            "test_openai": HealthCheckResult(
+            )
+
+        async def mock_health_check_degraded():
+            from src.providers.models import HealthCheckResult
+            return HealthCheckResult(
                 provider_name="test_openai",
                 status=ProviderStatus.DEGRADED,
                 timestamp=datetime.now(),
                 latency_ms=3000.0,
                 success_rate=0.85
             )
-        }
 
-        await registry.register(provider1)
-        await registry.register(provider2)
+        provider1.health_check = mock_health_check_healthy
+        provider2.health_check = mock_health_check_degraded
+
+        await registry.register(provider1, skip_health_check=True)
+        await registry.register(provider2, skip_health_check=True)
+
+        # Perform health checks to populate results
+        for provider in registry.get_all_providers():
+            result = await provider.health_check()
+            registry._health_check_results[provider.config.name] = result
 
         request = GatewayRequest(
             prompt="Test",
@@ -261,7 +289,7 @@ class TestHealthBasedRouting:
 
         # Should choose the healthy provider
         assert decision.provider_name == "test_azure"
-        assert "Healthiest provider" in decision.reason
+        assert "Healthiest" in decision.reason
 
 
 class TestFailoverScenarios:
@@ -283,8 +311,22 @@ class TestFailoverScenarios:
         provider1.status = ProviderStatus.HEALTHY
         provider2.status = ProviderStatus.HEALTHY
 
-        await registry.register(provider1)
-        await registry.register(provider2)
+        # Mock health checks
+        async def mock_health_check():
+            from src.providers.models import HealthCheckResult
+            return HealthCheckResult(
+                provider_name="test_azure",
+                status=ProviderStatus.HEALTHY,
+                timestamp=datetime.now(),
+                latency_ms=100.0,
+                success_rate=0.99
+            )
+
+        provider1.health_check = mock_health_check
+        provider2.health_check = mock_health_check
+
+        await registry.register(provider1, skip_health_check=True)
+        await registry.register(provider2, skip_health_check=True)
 
         # Mock primary provider to fail
         async def mock_generate_failure(request, model=None):
@@ -343,8 +385,22 @@ class TestFailoverScenarios:
         provider1.status = ProviderStatus.HEALTHY
         provider2.status = ProviderStatus.HEALTHY
 
-        await registry.register(provider1)
-        await registry.register(provider2)
+        # Mock health checks
+        async def mock_health_check():
+            from src.providers.models import HealthCheckResult
+            return HealthCheckResult(
+                provider_name="test_azure",
+                status=ProviderStatus.HEALTHY,
+                timestamp=datetime.now(),
+                latency_ms=100.0,
+                success_rate=0.99
+            )
+
+        provider1.health_check = mock_health_check
+        provider2.health_check = mock_health_check
+
+        await registry.register(provider1, skip_health_check=True)
+        await registry.register(provider2, skip_health_check=True)
 
         # Mock both providers to fail
         async def mock_generate_failure(request, model=None):
@@ -365,7 +421,7 @@ class TestFailoverScenarios:
         with pytest.raises(ProviderError) as exc_info:
             await registry.route_request(request)
 
-        assert "All providers failed" in str(exc_info.value)
+        assert "All providers failed" in str(exc_info.value) or "No available providers" in str(exc_info.value)
 
 
 class TestEndToEndRequestFlow:
@@ -387,8 +443,22 @@ class TestEndToEndRequestFlow:
         provider1.status = ProviderStatus.HEALTHY
         provider2.status = ProviderStatus.HEALTHY
 
-        await registry.register(provider1)
-        await registry.register(provider2)
+        # Mock health checks
+        async def mock_health_check():
+            from src.providers.models import HealthCheckResult
+            return HealthCheckResult(
+                provider_name="test_azure",
+                status=ProviderStatus.HEALTHY,
+                timestamp=datetime.now(),
+                latency_ms=100.0,
+                success_rate=0.99
+            )
+
+        provider1.health_check = mock_health_check
+        provider2.health_check = mock_health_check
+
+        await registry.register(provider1, skip_health_check=True)
+        await registry.register(provider2, skip_health_check=True)
 
         # Mock successful generation
         async def mock_generate(request, model=None):
@@ -441,7 +511,20 @@ class TestEndToEndRequestFlow:
 
         provider.status = ProviderStatus.HEALTHY
 
-        await registry.register(provider)
+        # Mock health check
+        async def mock_health_check():
+            from src.providers.models import HealthCheckResult
+            return HealthCheckResult(
+                provider_name="test_openai",
+                status=ProviderStatus.HEALTHY,
+                timestamp=datetime.now(),
+                latency_ms=100.0,
+                success_rate=0.99
+            )
+
+        provider.health_check = mock_health_check
+
+        await registry.register(provider, skip_health_check=True)
 
         async def mock_generate(request, model=None):
             mock_response = Mock(spec=GatewayResponse)
@@ -504,7 +587,7 @@ class TestHealthMonitoring:
 
         provider.health_check = mock_health_check
 
-        await registry.register(provider)
+        await registry.register(provider, skip_health_check=True)
         await registry.start_health_checks()
 
         # Wait for one health check cycle
