@@ -6,7 +6,7 @@ across multiple LLM providers with intelligent failover, cost optimization,
 and performance monitoring.
 """
 
-from .base import Provider, ProviderStatus, HealthCheckResult
+from .base import Provider, ProviderStatus, HealthCheckResult, ProviderError
 from .registry import ProviderRegistry
 from .models import (
     ProviderConfig,
@@ -14,18 +14,27 @@ from .models import (
     RoutingStrategy,
     RoutingDecision,
     GatewayRequest,
-    GatewayResponse
+    GatewayResponse,
+    ModelCapability
 )
+from .azure_openai import AzureOpenAIProvider, create_azure_openai_provider
+from .openai import OpenAIProvider, create_openai_provider
 
 __all__ = [
     "Provider",
     "ProviderStatus",
     "HealthCheckResult",
+    "ProviderError",
     "ProviderRegistry",
     "ProviderConfig",
     "ModelConfig",
     "RoutingStrategy",
     "RoutingDecision",
     "GatewayRequest",
-    "GatewayResponse"
+    "GatewayResponse",
+    "ModelCapability",
+    "AzureOpenAIProvider",
+    "create_azure_openai_provider",
+    "OpenAIProvider",
+    "create_openai_provider"
 ]
