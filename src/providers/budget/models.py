@@ -3,11 +3,12 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
 
 class BudgetAlertType(Enum):
     """Budget alert types."""
+
     WARNING_80 = "warning_80"
     WARNING_90 = "warning_90"
     EXCEEDED_100 = "exceeded_100"
@@ -16,6 +17,7 @@ class BudgetAlertType(Enum):
 
 class BudgetStatus(Enum):
     """Budget status."""
+
     ACTIVE = "active"
     WARNING = "warning"
     EXCEEDED = "exceeded"
@@ -33,7 +35,7 @@ class BudgetConfig:
     pause_on_exceed: bool = True
     auto_renewal: bool = True
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate budget configuration."""
         if self.daily_limit_usd <= 0:
             raise ValueError("Daily limit must be positive")
@@ -64,7 +66,7 @@ class BudgetAlert:
             "limit_usd": self.limit_usd,
             "percentage": self.percentage,
             "timestamp": self.timestamp.isoformat(),
-            "message": self.message
+            "message": self.message,
         }
 
 
@@ -82,7 +84,7 @@ class BudgetUsage:
     daily_status: BudgetStatus = BudgetStatus.ACTIVE
     monthly_status: BudgetStatus = BudgetStatus.ACTIVE
 
-    def add_cost(self, cost_usd: float):
+    def add_cost(self, cost_usd: float) -> None:
         """
         Add cost to usage tracking.
 
@@ -94,14 +96,14 @@ class BudgetUsage:
         self.daily_request_count += 1
         self.monthly_request_count += 1
 
-    def reset_daily(self):
+    def reset_daily(self) -> None:
         """Reset daily usage."""
         self.daily_usage_usd = 0.0
         self.daily_request_count = 0
         self.last_reset_daily = datetime.now()
         self.daily_status = BudgetStatus.ACTIVE
 
-    def reset_monthly(self):
+    def reset_monthly(self) -> None:
         """Reset monthly usage."""
         self.monthly_usage_usd = 0.0
         self.monthly_request_count = 0
@@ -171,7 +173,7 @@ class BudgetUsage:
             "last_reset_daily": self.last_reset_daily.isoformat(),
             "last_reset_monthly": self.last_reset_monthly.isoformat(),
             "daily_status": self.daily_status.value,
-            "monthly_status": self.monthly_status.value
+            "monthly_status": self.monthly_status.value,
         }
 
 
@@ -206,5 +208,5 @@ class BudgetReport:
             "monthly_request_count": self.monthly_request_count,
             "avg_cost_per_request": round(self.avg_cost_per_request, 6),
             "alerts_count": len(self.alerts_today),
-            "generated_at": self.generated_at.isoformat()
+            "generated_at": self.generated_at.isoformat(),
         }

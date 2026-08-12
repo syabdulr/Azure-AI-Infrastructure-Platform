@@ -1,16 +1,16 @@
 """Base cache interface."""
 
 from abc import ABC, abstractmethod
-from typing import Optional, Any, Dict
 from datetime import datetime, timedelta
+from typing import Any, Callable, Dict, Optional
 
-from .models import CacheEntry, CacheResult, CacheMetrics, CacheStatus
+from .models import CacheEntry, CacheMetrics, CacheResult, CacheStatus
 
 
 class CacheBackend(ABC):
     """Abstract base class for cache backends."""
 
-    def __init__(self, default_ttl: int = 3600):
+    def __init__(self, default_ttl: int = 3600) -> None:
         """
         Initialize cache backend.
 
@@ -39,7 +39,7 @@ class CacheBackend(ABC):
         key: str,
         value: Any,
         ttl: Optional[int] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """
         Set a value in cache.
@@ -99,11 +99,7 @@ class CacheBackend(ABC):
         pass
 
     def create_cache_entry(
-        self,
-        key: str,
-        value: Any,
-        ttl: int,
-        metadata: Optional[Dict[str, Any]] = None
+        self, key: str, value: Any, ttl: int, metadata: Optional[Dict[str, Any]] = None
     ) -> CacheEntry:
         """
         Create a cache entry.
@@ -129,7 +125,7 @@ class CacheBackend(ABC):
             model=metadata.get("model", "unknown") if metadata else "unknown",
             prompt_tokens=metadata.get("prompt_tokens", 0) if metadata else 0,
             completion_tokens=metadata.get("completion_tokens", 0) if metadata else 0,
-            cost=metadata.get("cost", 0.0) if metadata else 0.0
+            cost=metadata.get("cost", 0.0) if metadata else 0.0,
         )
 
     def get_metrics(self) -> CacheMetrics:
@@ -141,16 +137,16 @@ class CacheBackend(ABC):
         """
         return self.metrics
 
-    def reset_metrics(self):
+    def reset_metrics(self) -> None:
         """Reset cache metrics."""
         self.metrics.reset()
 
     async def get_or_set(
         self,
         key: str,
-        value_factory,
+        value_factory: Callable[[], Any],
         ttl: Optional[int] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> CacheResult:
         """
         Get value from cache or set it if not present.
@@ -180,7 +176,7 @@ class CacheBackend(ABC):
             return CacheResult(
                 status=CacheStatus.HIT,  # Treat as hit since we just cached it
                 entry=self.create_cache_entry(key, value, ttl or self.default_ttl, metadata),
-                key=key
+                key=key,
             )
 
         return result

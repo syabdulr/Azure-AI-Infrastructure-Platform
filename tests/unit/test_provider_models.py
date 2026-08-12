@@ -1,19 +1,20 @@
 """Unit tests for provider models."""
 
-import pytest
 from datetime import datetime
 
+import pytest
+
 from src.providers.models import (
-    ProviderStatus,
-    RoutingStrategy,
+    GatewayRequest,
+    GatewayResponse,
+    HealthCheckResult,
     ModelCapability,
     ModelConfig,
     ProviderConfig,
     ProviderMetrics,
-    HealthCheckResult,
-    GatewayRequest,
-    GatewayResponse,
-    RoutingDecision
+    ProviderStatus,
+    RoutingDecision,
+    RoutingStrategy,
 )
 
 
@@ -26,7 +27,7 @@ class TestModelConfig:
             name="gpt-4",
             cost_per_1k_tokens=0.03,
             max_tokens=8192,
-            capabilities={ModelCapability.CHAT, ModelCapability.REASONING}
+            capabilities={ModelCapability.CHAT, ModelCapability.REASONING},
         )
 
         assert config.name == "gpt-4"
@@ -43,9 +44,7 @@ class TestProviderConfig:
     def test_provider_config_creation(self):
         """Test creating a provider configuration."""
         config = ProviderConfig(
-            name="azure_openai",
-            provider_type="azure_openai",
-            api_key="test_key"
+            name="azure_openai", provider_type="azure_openai", api_key="test_key"
         )
 
         assert config.name == "azure_openai"
@@ -65,7 +64,7 @@ class TestHealthCheckResult:
             provider_name="azure_openai",
             status=ProviderStatus.HEALTHY,
             timestamp=datetime.now(),
-            latency_ms=150.5
+            latency_ms=150.5,
         )
 
         assert result.provider_name == "azure_openai"
@@ -104,7 +103,7 @@ class TestGatewayRequest:
         """Test creating a request with required capabilities."""
         request = GatewayRequest(
             prompt="Write code",
-            model_requirements={ModelCapability.CODE, ModelCapability.REASONING}
+            model_requirements={ModelCapability.CODE, ModelCapability.REASONING},
         )
 
         assert ModelCapability.CODE in request.model_requirements
@@ -113,10 +112,7 @@ class TestGatewayRequest:
     def test_request_with_metadata(self):
         """Test creating a request with tenant and user ID."""
         request = GatewayRequest(
-            prompt="Test",
-            tenant_id="tenant_123",
-            user_id="user_456",
-            request_id="req_789"
+            prompt="Test", tenant_id="tenant_123", user_id="user_456", request_id="req_789"
         )
 
         assert request.tenant_id == "tenant_123"
@@ -138,7 +134,7 @@ class TestGatewayResponse:
             tokens_used=10,
             latency_ms=100.0,
             cost=0.0003,
-            request_id="req_123"
+            request_id="req_123",
         )
 
         assert response.content == "Hello!"
@@ -160,7 +156,7 @@ class TestRoutingDecision:
             strategy=RoutingStrategy.COST_OPTIMIZED,
             reason="Cheapest provider",
             confidence=0.8,
-            alternate_providers=["openai", "anthropic"]
+            alternate_providers=["openai", "anthropic"],
         )
 
         assert decision.provider_name == "azure_openai"

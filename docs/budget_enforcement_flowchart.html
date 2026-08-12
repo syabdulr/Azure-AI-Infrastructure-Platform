@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Budget Enforcement Flowchart</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 20px;
+        }
+        .mermaid {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="color: #00a8ff;">Multi-Provider AI Gateway: Budget Enforcement Flow</h1>
+    <div class="mermaid">
+        flowchart TD
+            A[API Request] --> B{Check Budget}
+            B -->|OK| C[Record Usage]
+            B -->|Exceeded| X[Request Blocked]
+            
+            C --> D{Cost Accumulation}
+            D --> E{Check Thresholds}
+            
+            E -->|≥ 80%| F[Warning Alert<br/>⚠️ 80%]
+            E -->|≥ 90%| G[Critical Alert<br/>🚨 90%]
+            E -->|≥ 100%| H[Exceeded Alert<br/>💥 100%]
+            E -->|< 80%| I[Continue]
+            
+            F --> J[Alert Callback]
+            G --> J
+            H --> K{Pause on Exceed?}
+            
+            K -->|Yes| L[Pause Provider]
+            K -->|No| M[Continue Logging]
+            
+            L --> N[Block Future Requests]
+            
+            J --> O[Generate Report]
+            M --> O
+            I --> O
+            
+            O --> P[Return Response]
+            N --> P
+            
+            style A fill:#00a8ff
+            style B fill:#ff6b6b
+            style X fill:#ff6b6b
+            style F fill:#feca57
+            style G fill:#ff9f43
+            style H fill:#ee5253
+            style L fill:#ee5253
+            style P fill:#1dd1a1
+            
+            classDef alert fill:#feca57,stroke:#e58e26,stroke-width:2px
+            classDef critical fill:#ff9f43,stroke:#e58e26,stroke-width:2px
+            classDef exceeded fill:#ee5253,stroke:#c44569,stroke-width:2px
+            classDef success fill:#1dd1a1,stroke:#10ac84,stroke-width:2px
+            
+            class F,G alert
+            class H exceeded
+            class P success
+    </div>
+</body>
+</html>

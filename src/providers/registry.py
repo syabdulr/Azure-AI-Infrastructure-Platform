@@ -1,21 +1,21 @@
 """Provider registry for managing multiple LLM providers."""
 
-from datetime import datetime
-from typing import Dict, List, Optional, Set
 import asyncio
 import logging
+from datetime import datetime
+from typing import Dict, List, Optional, Set
 
 from .base import Provider, ProviderError
 from .models import (
-    ProviderConfig,
-    ModelConfig,
-    ProviderStatus,
-    HealthCheckResult,
-    RoutingStrategy,
     GatewayRequest,
     GatewayResponse,
+    HealthCheckResult,
+    ModelCapability,
+    ModelConfig,
+    ProviderConfig,
+    ProviderStatus,
     RoutingDecision,
-    ModelCapability
+    RoutingStrategy,
 )
 
 logger = logging.getLogger(__name__)
@@ -48,9 +48,7 @@ class ProviderRegistry:
         """
         async with self._lock:
             if provider.config.name in self._providers:
-                raise ValueError(
-                    f"Provider {provider.config.name} already registered"
-                )
+                raise ValueError(f"Provider {provider.config.name} already registered")
 
             self._providers[provider.config.name] = provider
             logger.info(f"Registered provider: {provider.config.name}")
@@ -86,19 +84,11 @@ class ProviderRegistry:
 
     def get_healthy_providers(self) -> List[Provider]:
         """Get all healthy providers."""
-        return [
-            provider
-            for provider in self._providers.values()
-            if provider.is_healthy()
-        ]
+        return [provider for provider in self._providers.values() if provider.is_healthy()]
 
     def get_available_providers(self) -> List[Provider]:
         """Get all available providers (healthy or degraded)."""
-        return [
-            provider
-            for provider in self._providers.values()
-            if provider.is_available()
-        ]
+        return [provider for provider in self._providers.values() if provider.is_available()]
 
     def get_provider_status(self, name: str) -> Optional[ProviderStatus]:
         """Get provider status."""
@@ -143,10 +133,7 @@ class ProviderRegistry:
 
     async def _check_all_providers(self) -> None:
         """Check health of all providers."""
-        tasks = [
-            self._check_provider_health(provider)
-            for provider in self._providers.values()
-        ]
+        tasks = [self._check_provider_health(provider) for provider in self._providers.values()]
         await asyncio.gather(*tasks, return_exceptions=True)
 
     async def _check_provider_health(self, provider: Provider) -> None:
@@ -181,13 +168,10 @@ class ProviderRegistry:
                 status=ProviderStatus.UNHEALTHY,
                 timestamp=datetime.now(),
                 latency_ms=0.0,
-                error=str(e)
+                error=str(e),
             )
 
-    async def route_request(
-        self,
-        request: GatewayRequest
-    ) -> GatewayResponse:
+    async def route_request(self, request: GatewayRequest) -> GatewayResponse:
         """
         Route a request to an appropriate provider.
 
@@ -210,10 +194,7 @@ class ProviderRegistry:
 
         try:
             provider = self._providers[decision.provider_name]
-            response = await provider.generate_with_fallback(
-                request,
-                model=decision.model_name
-            )
+            response = await provider.generate_with_fallback(request, model=decision.model_name)
 
             # Add routing metadata
             response.routing_strategy = strategy
@@ -225,15 +206,13 @@ class ProviderRegistry:
             # Try alternate providers if available
             if decision.alternate_providers:
                 logger.warning(
-                    f"Primary provider {decision.provider_name} failed, "
-                    f"trying alternates"
+                    f"Primary provider {decision.provider_name} failed, " f"trying alternates"
                 )
                 for alt_provider_name in decision.alternate_providers:
                     try:
                         alt_provider = self._providers[alt_provider_name]
                         response = await alt_provider.generate_with_fallback(
-                            request,
-                            model=decision.model_name
+                            request, model=decision.model_name
                         )
                         response.routing_strategy = strategy
                         response.routing_reason = (
@@ -243,14 +222,10 @@ class ProviderRegistry:
                     except ProviderError:
                         continue
 
-            raise ProviderError(
-                f"All providers failed for request {request.request_id}"
-            )
+            raise ProviderError(f"All providers failed for request {request.request_id}")
 
     async def _make_routing_decision(
-        self,
-        request: GatewayRequest,
-        strategy: RoutingStrategy
+        self, request: GatewayRequest, strategy: RoutingStrategy
     ) -> RoutingDecision:
         """
         Make a routing decision based on strategy.
@@ -283,9 +258,7 @@ class ProviderRegistry:
             return await self._route_cost_optimized(available_providers, request)
 
     async def _route_round_robin(
-        self,
-        providers: List[Provider],
-        request: GatewayRequest
+        self, providers: List[Provider], request: GatewayRequest
     ) -> RoutingDecision:
         """Route using round-robin strategy."""
         async with self._lock:
@@ -298,13 +271,11 @@ class ProviderRegistry:
             strategy=RoutingStrategy.ROUND_ROBIN,
             reason="Round-robin selection",
             confidence=0.7,
-            alternate_providers=[p.config.name for p in providers if p != provider]
+            alternate_providers=[p.config.name for p in providers if p != provider],
         )
 
     async def _route_cost_optimized(
-        self,
-        providers: List[Provider],
-        request: GatewayRequest
+        self, providers: List[Provider], request: GatewayRequest
     ) -> RoutingDecision:
         """Route to cheapest available provider."""
         required_capabilities = request.model_requirements or set()
@@ -319,18 +290,13 @@ class ProviderRegistry:
 
         if not capable_providers:
             # Fall back to any provider if no capabilities specified
-            capable_providers = [
-                (p, list(p.get_available_models().values())[0])
-                for p in providers
-            ]
+            capable_providers = [(p, list(p.get_available_models().values())[0]) for p in providers]
 
         # Sort by cost
         capable_providers.sort(key=lambda x: x[1].cost_per_1k_tokens)
 
         provider, model = capable_providers[0]
-        alternate_providers = [
-            p.config.name for p, _ in capable_providers[1:5]  # Top 4 alternates
-        ]
+        alternate_providers = [p.config.name for p, _ in capable_providers[1:5]]  # Top 4 alternates
 
         return RoutingDecision(
             provider_name=provider.config.name,
@@ -338,13 +304,11 @@ class ProviderRegistry:
             strategy=RoutingStrategy.COST_OPTIMIZED,
             reason=f"Cheapest provider with required capabilities (${model.cost_per_1k_tokens}/1k tokens)",
             confidence=0.8,
-            alternate_providers=alternate_providers
+            alternate_providers=alternate_providers,
         )
 
     async def _route_performance_based(
-        self,
-        providers: List[Provider],
-        request: GatewayRequest
+        self, providers: List[Provider], request: GatewayRequest
     ) -> RoutingDecision:
         """Route to best performing provider (lowest latency, highest success rate)."""
         # Score providers based on success rate and latency
@@ -365,9 +329,7 @@ class ProviderRegistry:
 
         provider = scored_providers[0][0]
         model = list(provider.get_available_models().keys())[0]
-        alternate_providers = [
-            p.config.name for p, _ in scored_providers[1:5]
-        ]
+        alternate_providers = [p.config.name for p, _ in scored_providers[1:5]]
 
         return RoutingDecision(
             provider_name=provider.config.name,
@@ -375,13 +337,11 @@ class ProviderRegistry:
             strategy=RoutingStrategy.PERFORMANCE_BASED,
             reason=f"Highest performing provider (success: {provider.get_success_rate():.1%}, latency: {provider.metrics.avg_latency_ms:.0f}ms)",
             confidence=0.75,
-            alternate_providers=alternate_providers
+            alternate_providers=alternate_providers,
         )
 
     async def _route_health_based(
-        self,
-        providers: List[Provider],
-        request: GatewayRequest
+        self, providers: List[Provider], request: GatewayRequest
     ) -> RoutingDecision:
         """Route to healthiest provider only."""
         healthy_providers = self.get_healthy_providers()
@@ -398,10 +358,11 @@ class ProviderRegistry:
                     provider_name=p.config.name,
                     status=ProviderStatus.UNKNOWN,
                     timestamp=datetime.now(),
-                    latency_ms=0.0
-                )
-            ).success_rate or 0.0,
-            reverse=True
+                    latency_ms=0.0,
+                ),
+            ).success_rate
+            or 0.0,
+            reverse=True,
         )
 
         provider = sorted_providers[0]
@@ -415,13 +376,11 @@ class ProviderRegistry:
             strategy=RoutingStrategy.HEALTH_BASED,
             reason=f"Healthiest provider (status: {provider.status.value})",
             confidence=0.85,
-            alternate_providers=alternate_providers
+            alternate_providers=alternate_providers,
         )
 
     async def _route_capability_based(
-        self,
-        providers: List[Provider],
-        request: GatewayRequest
+        self, providers: List[Provider], request: GatewayRequest
     ) -> RoutingDecision:
         """Route based on required capabilities."""
         required_capabilities = request.model_requirements or set()
@@ -446,9 +405,7 @@ class ProviderRegistry:
         capable_providers.sort(key=lambda x: x[1].cost_per_1k_tokens)
 
         provider, model = capable_providers[0]
-        alternate_providers = [
-            p.config.name for p, _ in capable_providers[1:5]
-        ]
+        alternate_providers = [p.config.name for p, _ in capable_providers[1:5]]
 
         return RoutingDecision(
             provider_name=provider.config.name,
@@ -456,5 +413,5 @@ class ProviderRegistry:
             strategy=RoutingStrategy.CAPABILITY_BASED,
             reason=f"Provider with required capabilities: {required_capabilities}",
             confidence=0.9,
-            alternate_providers=alternate_providers
+            alternate_providers=alternate_providers,
         )

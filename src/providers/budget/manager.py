@@ -1,28 +1,28 @@
 """Budget manager for multi-provider AI gateway."""
 
-from typing import Dict, List, Optional, Callable
-from datetime import datetime, timedelta
 import threading
+from datetime import datetime, timedelta
+from typing import Callable, Dict, List, Optional
 
 from .models import (
-    BudgetConfig,
-    BudgetUsage,
     BudgetAlert,
     BudgetAlertType,
+    BudgetConfig,
+    BudgetReport,
     BudgetStatus,
-    BudgetReport
+    BudgetUsage,
 )
 
 
 class BudgetManager:
     """Manages budgets for multi-provider gateway."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize budget manager."""
         self._configs: Dict[str, BudgetConfig] = {}
         self._usage: Dict[str, BudgetUsage] = {}
         self._alerts: List[BudgetAlert] = []
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._alert_callbacks: List[Callable[[BudgetAlert], None]] = []
 
         # Default budget limits (USD)
@@ -36,8 +36,8 @@ class BudgetManager:
         monthly_limit_usd: Optional[float] = None,
         alerts_enabled: bool = True,
         pause_on_exceed: bool = True,
-        auto_renewal: bool = True
-    ):
+        auto_renewal: bool = True,
+    ) -> None:
         """
         Configure budget for a provider.
 
@@ -59,7 +59,7 @@ class BudgetManager:
                 monthly_limit_usd=monthly,
                 alerts_enabled=alerts_enabled,
                 pause_on_exceed=pause_on_exceed,
-                auto_renewal=auto_renewal
+                auto_renewal=auto_renewal,
             )
 
             self._configs[provider_name] = config
@@ -69,10 +69,7 @@ class BudgetManager:
                 self._usage[provider_name] = BudgetUsage(provider_name=provider_name)
 
     def record_usage(
-        self,
-        provider_name: str,
-        cost_usd: float,
-        timestamp: Optional[datetime] = None
+        self, provider_name: str, cost_usd: float, timestamp: Optional[datetime] = None
     ) -> Optional[BudgetAlert]:
         """
         Record usage for a provider.
@@ -105,10 +102,10 @@ class BudgetManager:
                 return self._create_alert(
                     BudgetAlertType.EXCEEDED_100,
                     provider_name,
-                    'daily',
+                    "daily",
                     usage.daily_usage_usd,
                     config.daily_limit_usd,
-                    "Provider paused due to budget exceeded"
+                    "Provider paused due to budget exceeded",
                 )
 
             # Add cost
@@ -150,15 +147,24 @@ class BudgetManager:
 
             # Check if paused
             if usage.daily_status == BudgetStatus.PAUSED:
-                return False, f"Provider paused: daily budget exceeded (${usage.daily_usage_usd:.2f}/${config.daily_limit_usd:.2f})"
+                return (
+                    False,
+                    f"Provider paused: daily budget exceeded (${usage.daily_usage_usd:.2f}/${config.daily_limit_usd:.2f})",
+                )
 
             # Check if exceeded
             if config.pause_on_exceed:
                 if usage.is_daily_exceeded(config.daily_limit_usd):
-                    return False, f"Daily budget exceeded: ${usage.daily_usage_usd:.2f}/${config.daily_limit_usd:.2f}"
+                    return (
+                        False,
+                        f"Daily budget exceeded: ${usage.daily_usage_usd:.2f}/${config.daily_limit_usd:.2f}",
+                    )
 
                 if usage.is_monthly_exceeded(config.monthly_limit_usd):
-                    return False, f"Monthly budget exceeded: ${usage.monthly_usage_usd:.2f}/${config.monthly_limit_usd:.2f}"
+                    return (
+                        False,
+                        f"Monthly budget exceeded: ${usage.monthly_usage_usd:.2f}/${config.monthly_limit_usd:.2f}",
+                    )
 
             return True, "Budget OK"
 
@@ -204,12 +210,17 @@ class BudgetManager:
 
             # Calculate average cost per request
             total_requests = usage.daily_request_count + usage.monthly_request_count
-            avg_cost = (usage.daily_usage_usd + usage.monthly_usage_usd) / total_requests if total_requests > 0 else 0.0
+            avg_cost = (
+                (usage.daily_usage_usd + usage.monthly_usage_usd) / total_requests
+                if total_requests > 0
+                else 0.0
+            )
 
             # Get today's alerts
             today = datetime.now().date()
             alerts_today = [
-                alert for alert in self._alerts
+                alert
+                for alert in self._alerts
                 if alert.provider_name == provider_name and alert.timestamp.date() == today
             ]
 
@@ -224,7 +235,7 @@ class BudgetManager:
                 daily_request_count=usage.daily_request_count,
                 monthly_request_count=usage.monthly_request_count,
                 avg_cost_per_request=avg_cost,
-                alerts_today=alerts_today
+                alerts_today=alerts_today,
             )
 
     def get_all_reports(self) -> List[BudgetReport]:
@@ -243,9 +254,7 @@ class BudgetManager:
             return reports
 
     def get_alerts(
-        self,
-        provider_name: Optional[str] = None,
-        since: Optional[datetime] = None
+        self, provider_name: Optional[str] = None, since: Optional[datetime] = None
     ) -> List[BudgetAlert]:
         """
         Get budget alerts.
@@ -268,7 +277,7 @@ class BudgetManager:
 
             return alerts
 
-    def register_alert_callback(self, callback: Callable[[BudgetAlert], None]):
+    def register_alert_callback(self, callback: Callable[[BudgetAlert], None]) -> None:
         """
         Register a callback for budget alerts.
 
@@ -278,7 +287,7 @@ class BudgetManager:
         with self._lock:
             self._alert_callbacks.append(callback)
 
-    def reset_daily(self, provider_name: str):
+    def reset_daily(self, provider_name: str) -> None:
         """
         Reset daily usage for a provider.
 
@@ -289,7 +298,7 @@ class BudgetManager:
             if provider_name in self._usage:
                 self._usage[provider_name].reset_daily()
 
-    def reset_monthly(self, provider_name: str):
+    def reset_monthly(self, provider_name: str) -> None:
         """
         Reset monthly usage for a provider.
 
@@ -300,7 +309,7 @@ class BudgetManager:
             if provider_name in self._usage:
                 self._usage[provider_name].reset_monthly()
 
-    def _check_and_reset_usage(self, usage: BudgetUsage, config: BudgetConfig):
+    def _check_and_reset_usage(self, usage: BudgetUsage, config: BudgetConfig) -> None:
         """
         Check if we need to reset daily/monthly usage.
 
@@ -326,7 +335,7 @@ class BudgetManager:
             if last_monthly.month != now.month or last_monthly.year != now.year:
                 usage.reset_monthly()
 
-    def _update_status(self, usage: BudgetUsage, config: BudgetConfig):
+    def _update_status(self, usage: BudgetUsage, config: BudgetConfig) -> None:
         """
         Update budget status based on usage.
 
@@ -337,7 +346,9 @@ class BudgetManager:
         # Update daily status
         daily_pct = usage.get_daily_percentage(config.daily_limit_usd)
         if daily_pct >= 100:
-            usage.daily_status = BudgetStatus.PAUSED if config.pause_on_exceed else BudgetStatus.EXCEEDED
+            usage.daily_status = (
+                BudgetStatus.PAUSED if config.pause_on_exceed else BudgetStatus.EXCEEDED
+            )
         elif daily_pct >= 90:
             usage.daily_status = BudgetStatus.WARNING
         else:
@@ -346,7 +357,9 @@ class BudgetManager:
         # Update monthly status
         monthly_pct = usage.get_monthly_percentage(config.monthly_limit_usd)
         if monthly_pct >= 100:
-            usage.monthly_status = BudgetStatus.PAUSED if config.pause_on_exceed else BudgetStatus.EXCEEDED
+            usage.monthly_status = (
+                BudgetStatus.PAUSED if config.pause_on_exceed else BudgetStatus.EXCEEDED
+            )
         elif monthly_pct >= 90:
             usage.monthly_status = BudgetStatus.WARNING
         else:
@@ -371,10 +384,10 @@ class BudgetManager:
             return self._create_alert(
                 BudgetAlertType.EXCEEDED_100,
                 config.provider_name,
-                'daily',
+                "daily",
                 usage.daily_usage_usd,
                 config.daily_limit_usd,
-                f"Daily budget exceeded: ${usage.daily_usage_usd:.2f}/${config.daily_limit_usd:.2f}"
+                f"Daily budget exceeded: ${usage.daily_usage_usd:.2f}/${config.daily_limit_usd:.2f}",
             )
 
         # Check 100% exceeded (monthly)
@@ -382,10 +395,10 @@ class BudgetManager:
             return self._create_alert(
                 BudgetAlertType.EXCEEDED_100,
                 config.provider_name,
-                'monthly',
+                "monthly",
                 usage.monthly_usage_usd,
                 config.monthly_limit_usd,
-                f"Monthly budget exceeded: ${usage.monthly_usage_usd:.2f}/${config.monthly_limit_usd:.2f}"
+                f"Monthly budget exceeded: ${usage.monthly_usage_usd:.2f}/${config.monthly_limit_usd:.2f}",
             )
 
         # Check 90% warning
@@ -393,20 +406,20 @@ class BudgetManager:
             return self._create_alert(
                 BudgetAlertType.WARNING_90,
                 config.provider_name,
-                'daily',
+                "daily",
                 usage.daily_usage_usd,
                 config.daily_limit_usd,
-                f"Daily budget at {daily_pct:.1f}%: ${usage.daily_usage_usd:.2f}/${config.daily_limit_usd:.2f}"
+                f"Daily budget at {daily_pct:.1f}%: ${usage.daily_usage_usd:.2f}/${config.daily_limit_usd:.2f}",
             )
 
         if monthly_pct >= 90 and monthly_pct < 100:
             return self._create_alert(
                 BudgetAlertType.WARNING_90,
                 config.provider_name,
-                'monthly',
+                "monthly",
                 usage.monthly_usage_usd,
                 config.monthly_limit_usd,
-                f"Monthly budget at {monthly_pct:.1f}%: ${usage.monthly_usage_usd:.2f}/${config.monthly_limit_usd:.2f}"
+                f"Monthly budget at {monthly_pct:.1f}%: ${usage.monthly_usage_usd:.2f}/${config.monthly_limit_usd:.2f}",
             )
 
         # Check 80% warning
@@ -414,20 +427,20 @@ class BudgetManager:
             return self._create_alert(
                 BudgetAlertType.WARNING_80,
                 config.provider_name,
-                'daily',
+                "daily",
                 usage.daily_usage_usd,
                 config.daily_limit_usd,
-                f"Daily budget at {daily_pct:.1f}%: ${usage.daily_usage_usd:.2f}/${config.daily_limit_usd:.2f}"
+                f"Daily budget at {daily_pct:.1f}%: ${usage.daily_usage_usd:.2f}/${config.daily_limit_usd:.2f}",
             )
 
         if monthly_pct >= 80 and monthly_pct < 90:
             return self._create_alert(
                 BudgetAlertType.WARNING_80,
                 config.provider_name,
-                'monthly',
+                "monthly",
                 usage.monthly_usage_usd,
                 config.monthly_limit_usd,
-                f"Monthly budget at {monthly_pct:.1f}%: ${usage.monthly_usage_usd:.2f}/${config.monthly_limit_usd:.2f}"
+                f"Monthly budget at {monthly_pct:.1f}%: ${usage.monthly_usage_usd:.2f}/${config.monthly_limit_usd:.2f}",
             )
 
         return None
@@ -439,7 +452,7 @@ class BudgetManager:
         limit_type: str,
         usage_usd: float,
         limit_usd: float,
-        message: str
+        message: str,
     ) -> BudgetAlert:
         """
         Create a budget alert.
@@ -465,10 +478,10 @@ class BudgetManager:
             limit_usd=limit_usd,
             percentage=percentage,
             timestamp=datetime.now(),
-            message=message
+            message=message,
         )
 
-    def _trigger_alert_callbacks(self, alert: BudgetAlert):
+    def _trigger_alert_callbacks(self, alert: BudgetAlert) -> None:
         """
         Trigger alert callbacks.
 

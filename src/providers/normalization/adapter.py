@@ -1,16 +1,16 @@
 """Response normalizer base adapter."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, List
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from .models import (
-    NormalizedResponse,
-    UsageStatistics,
-    ToolCall,
     LogProb,
+    NormalizationError,
     NormalizationResult,
-    NormalizationError
+    NormalizedResponse,
+    ToolCall,
+    UsageStatistics,
 )
 
 
@@ -31,7 +31,7 @@ class ResponseAdapter(ABC):
         model_name: str,
         prompt_tokens: int,
         completion_tokens: int,
-        cost_per_1k: float
+        cost_per_1k: float,
     ) -> NormalizationResult:
         """
         Normalize a provider's raw response into a unified format.
@@ -49,10 +49,7 @@ class ResponseAdapter(ABC):
         pass
 
     def calculate_cost(
-        self,
-        prompt_tokens: int,
-        completion_tokens: int,
-        cost_per_1k: float
+        self, prompt_tokens: int, completion_tokens: int, cost_per_1k: float
     ) -> tuple[float, float, float]:
         """
         Calculate cost breakdown.
@@ -80,13 +77,15 @@ class ResponseAdapter(ABC):
         Returns:
             Tuple of (content, warnings)
         """
-        warnings = []
+        warnings: List[str] = []
 
         # Default: try to find 'choices[0].message.content'
         try:
             content = raw_response.get("choices", [{}])[0].get("message", {}).get("content", "")
             if not content:
-                warnings.append(f"{NormalizationError.EMPTY_RESPONSE.value}: No content in response")
+                warnings.append(
+                    f"{NormalizationError.EMPTY_RESPONSE.value}: No content in response"
+                )
                 return "", warnings
             return content, warnings
         except (KeyError, IndexError, AttributeError) as e:
@@ -104,14 +103,12 @@ class ResponseAdapter(ABC):
             Finish reason or None
         """
         try:
-            return raw_response.get("choices", [{}])[0].get("finish_reason")
+            finish_reason = raw_response.get("choices", [{}])[0].get("finish_reason")
+            return str(finish_reason) if finish_reason is not None else None
         except (KeyError, IndexError):
             return None
 
-    def extract_tool_calls(
-        self,
-        raw_response: Dict[str, Any]
-    ) -> tuple[List[ToolCall], List[str]]:
+    def extract_tool_calls(self, raw_response: Dict[str, Any]) -> tuple[List[ToolCall], List[str]]:
         """
         Extract tool calls from raw response.
 
@@ -121,13 +118,15 @@ class ResponseAdapter(ABC):
         Returns:
             Tuple of (tool_calls, warnings)
         """
-        warnings = []
+        warnings: List[str] = []
 
         if not self.supports_tool_calls:
             return [], warnings
 
         try:
-            raw_tool_calls = raw_response.get("choices", [{}])[0].get("message", {}).get("tool_calls", [])
+            raw_tool_calls = (
+                raw_response.get("choices", [{}])[0].get("message", {}).get("tool_calls", [])
+            )
 
             tool_calls = []
             for i, raw_call in enumerate(raw_tool_calls):
@@ -140,12 +139,14 @@ class ResponseAdapter(ABC):
                         warnings.append(f"Tool call {i} missing function name")
                         continue
 
-                    tool_calls.append(ToolCall(
-                        id=call_id,
-                        name=name,
-                        arguments=arguments,
-                        type=raw_call.get("type", "function")
-                    ))
+                    tool_calls.append(
+                        ToolCall(
+                            id=call_id,
+                            name=name,
+                            arguments=arguments,
+                            type=raw_call.get("type", "function"),
+                        )
+                    )
                 except Exception as e:
                     warnings.append(f"Failed to parse tool call {i}: {str(e)}")
 
@@ -155,8 +156,7 @@ class ResponseAdapter(ABC):
             return [], warnings
 
     def extract_logprobs(
-        self,
-        raw_response: Dict[str, Any]
+        self, raw_response: Dict[str, Any]
     ) -> tuple[Optional[List[LogProb]], List[str]]:
         """
         Extract log probabilities from raw response.
@@ -167,13 +167,15 @@ class ResponseAdapter(ABC):
         Returns:
             Tuple of (logprobs, warnings)
         """
-        warnings = []
+        warnings: List[str] = []
 
         if not self.supports_logprobs:
             return None, warnings
 
         try:
-            raw_logprobs = raw_response.get("choices", [{}])[0].get("logprobs", {}).get("content", [])
+            raw_logprobs = (
+                raw_response.get("choices", [{}])[0].get("logprobs", {}).get("content", [])
+            )
 
             if not raw_logprobs:
                 return None, warnings
@@ -192,11 +194,9 @@ class ResponseAdapter(ABC):
                             for tlp in lp.get("top_logprobs", [])
                         ]
 
-                    logprobs.append(LogProb(
-                        token=token,
-                        logprob=logprob,
-                        top_logprobs=top_logprobs
-                    ))
+                    logprobs.append(
+                        LogProb(token=token, logprob=logprob, top_logprobs=top_logprobs)
+                    )
                 except Exception as e:
                     warnings.append(f"Failed to parse logprob: {str(e)}")
 
@@ -218,7 +218,7 @@ class ResponseAdapter(ABC):
         logprobs: Optional[List[LogProb]] = None,
         raw_response: Optional[Dict[str, Any]] = None,
         request_id: Optional[str] = None,
-        cached: bool = False
+        cached: bool = False,
     ) -> NormalizedResponse:
         """
         Create a normalized response.
@@ -250,7 +250,7 @@ class ResponseAdapter(ABC):
             total_tokens=prompt_tokens + completion_tokens,
             prompt_cost=prompt_cost,
             completion_cost=completion_cost,
-            total_cost=total_cost
+            total_cost=total_cost,
         )
 
         return NormalizedResponse(
@@ -267,7 +267,7 @@ class ResponseAdapter(ABC):
             error=None,
             raw_response=raw_response or {},
             request_id=request_id,
-            cached=cached
+            cached=cached,
         )
 
     def create_result(
@@ -276,7 +276,7 @@ class ResponseAdapter(ABC):
         response: Optional[NormalizedResponse],
         warnings: List[str],
         errors: List[str],
-        normalization_duration_ms: float
+        normalization_duration_ms: float,
     ) -> NormalizationResult:
         """
         Create a normalization result.
@@ -297,5 +297,5 @@ class ResponseAdapter(ABC):
             warnings=warnings,
             errors=errors,
             original_provider=self.provider_name,
-            normalization_duration_ms=normalization_duration_ms
+            normalization_duration_ms=normalization_duration_ms,
         )

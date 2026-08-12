@@ -3,17 +3,18 @@
 import os
 import time
 from typing import Optional, Set
+
 import openai
 
 from .base import Provider, ProviderError
 from .models import (
-    ProviderConfig,
-    ModelConfig,
-    ProviderStatus,
-    HealthCheckResult,
     GatewayRequest,
     GatewayResponse,
-    ModelCapability
+    HealthCheckResult,
+    ModelCapability,
+    ModelConfig,
+    ProviderConfig,
+    ProviderStatus,
 )
 
 
@@ -38,13 +39,11 @@ class AzureOpenAIProvider(Provider):
             api_key=config.api_key,
             api_version="2024-02-15-preview",
             azure_endpoint=config.endpoint,
-            timeout=config.timeout
+            timeout=config.timeout,
         )
 
     async def generate(
-        self,
-        request: GatewayRequest,
-        model: Optional[str] = None
+        self, request: GatewayRequest, model: Optional[str] = None
     ) -> GatewayResponse:
         """
         Generate a response using Azure OpenAI.
@@ -63,9 +62,7 @@ class AzureOpenAIProvider(Provider):
         model_config = self.get_model(model_name)
 
         if not model_config:
-            raise ProviderError(
-                f"Model {model_name} not found in provider {self.config.name}"
-            )
+            raise ProviderError(f"Model {model_name} not found in provider {self.config.name}")
 
         start_time = time.time()
         request_id = request.request_id or f"{self.config.name}_{int(time.time())}"
@@ -74,12 +71,10 @@ class AzureOpenAIProvider(Provider):
             # Make the API call
             completion = self.client.chat.completions.create(
                 model=model_name,
-                messages=[
-                    {"role": "user", "content": request.prompt}
-                ],
+                messages=[{"role": "user", "content": request.prompt}],
                 max_tokens=request.max_tokens or model_config.max_tokens,
                 temperature=request.temperature,
-                timeout=self.config.timeout
+                timeout=self.config.timeout,
             )
 
             latency_ms = (time.time() - start_time) * 1000
@@ -102,8 +97,8 @@ class AzureOpenAIProvider(Provider):
                 metadata={
                     "finish_reason": completion.choices[0].finish_reason,
                     "prompt_tokens": completion.usage.prompt_tokens,
-                    "completion_tokens": completion.usage.completion_tokens
-                }
+                    "completion_tokens": completion.usage.completion_tokens,
+                },
             )
 
         except openai.APIError as e:
@@ -111,14 +106,12 @@ class AzureOpenAIProvider(Provider):
                 f"Azure OpenAI API error: {e}",
                 provider_name=self.config.name,
                 is_retryable=e.status_code not in [400, 401, 403],
-                is_rate_limit=e.status_code == 429
+                is_rate_limit=e.status_code == 429,
             )
 
         except openai.APITimeoutError as e:
             raise ProviderError(
-                f"Azure OpenAI timeout: {e}",
-                provider_name=self.config.name,
-                is_retryable=True
+                f"Azure OpenAI timeout: {e}", provider_name=self.config.name, is_retryable=True
             )
 
         except openai.RateLimitError as e:
@@ -126,21 +119,21 @@ class AzureOpenAIProvider(Provider):
                 f"Azure OpenAI rate limit: {e}",
                 provider_name=self.config.name,
                 is_retryable=True,
-                is_rate_limit=True
+                is_rate_limit=True,
             )
 
         except openai.APIConnectionError as e:
             raise ProviderError(
                 f"Azure OpenAI connection error: {e}",
                 provider_name=self.config.name,
-                is_retryable=True
+                is_retryable=True,
             )
 
         except Exception as e:
             raise ProviderError(
                 f"Unexpected error from Azure OpenAI: {e}",
                 provider_name=self.config.name,
-                is_retryable=False
+                is_retryable=False,
             )
 
     async def health_check(self) -> HealthCheckResult:
@@ -158,7 +151,7 @@ class AzureOpenAIProvider(Provider):
                 model=list(self.config.models.keys())[0],
                 messages=[{"role": "user", "content": "Hi"}],
                 max_tokens=1,
-                timeout=5
+                timeout=5,
             )
 
             latency_ms = (time.time() - start_time) * 1000
@@ -176,7 +169,7 @@ class AzureOpenAIProvider(Provider):
                 status=status,
                 timestamp=self._last_health_check or None,
                 latency_ms=latency_ms,
-                success_rate=self.get_success_rate()
+                success_rate=self.get_success_rate(),
             )
 
         except openai.RateLimitError:
@@ -187,7 +180,7 @@ class AzureOpenAIProvider(Provider):
                 timestamp=self._last_health_check or None,
                 latency_ms=latency_ms,
                 error="Rate limited",
-                success_rate=self.get_success_rate()
+                success_rate=self.get_success_rate(),
             )
 
         except Exception as e:
@@ -198,7 +191,7 @@ class AzureOpenAIProvider(Provider):
                 timestamp=self._last_health_check or None,
                 latency_ms=latency_ms,
                 error=str(e),
-                success_rate=self.get_success_rate()
+                success_rate=self.get_success_rate(),
             )
 
     def get_model(self, name: str) -> Optional[ModelConfig]:
@@ -218,7 +211,7 @@ def create_azure_openai_provider(
     name: str,
     api_key: Optional[str] = None,
     endpoint: Optional[str] = None,
-    models: Optional[dict] = None
+    models: Optional[dict] = None,
 ) -> AzureOpenAIProvider:
     """
     Factory function to create Azure OpenAI provider with default models.
@@ -252,10 +245,10 @@ def create_azure_openai_provider(
                     ModelCapability.CHAT,
                     ModelCapability.REASONING,
                     ModelCapability.CODE,
-                    ModelCapability.ANALYSIS
+                    ModelCapability.ANALYSIS,
                 },
                 context_window=8192,
-                supports_function_calling=True
+                supports_function_calling=True,
             ),
             "gpt-4-32k": ModelConfig(
                 name="gpt-4-32k",
@@ -265,41 +258,31 @@ def create_azure_openai_provider(
                     ModelCapability.CHAT,
                     ModelCapability.REASONING,
                     ModelCapability.CODE,
-                    ModelCapability.ANALYSIS
+                    ModelCapability.ANALYSIS,
                 },
                 context_window=32768,
-                supports_function_calling=True
+                supports_function_calling=True,
             ),
             "gpt-35-turbo": ModelConfig(
                 name="gpt-35-turbo",
                 cost_per_1k_tokens=0.002,
                 max_tokens=4096,
-                capabilities={
-                    ModelCapability.CHAT,
-                    ModelCapability.SIMPLE_REASONING
-                },
+                capabilities={ModelCapability.CHAT, ModelCapability.SIMPLE_REASONING},
                 context_window=4096,
-                supports_function_calling=True
+                supports_function_calling=True,
             ),
             "gpt-35-turbo-16k": ModelConfig(
                 name="gpt-35-turbo-16k",
                 cost_per_1k_tokens=0.003,
                 max_tokens=16384,
-                capabilities={
-                    ModelCapability.CHAT,
-                    ModelCapability.SIMPLE_REASONING
-                },
+                capabilities={ModelCapability.CHAT, ModelCapability.SIMPLE_REASONING},
                 context_window=16384,
-                supports_function_calling=True
-            )
+                supports_function_calling=True,
+            ),
         }
 
     config = ProviderConfig(
-        name=name,
-        provider_type="azure_openai",
-        api_key=api_key,
-        endpoint=endpoint,
-        models=models
+        name=name, provider_type="azure_openai", api_key=api_key, endpoint=endpoint, models=models
     )
 
     return AzureOpenAIProvider(config)

@@ -3,11 +3,12 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Any, Dict
+from typing import Any, Dict, Optional
 
 
 class CacheStatus(Enum):
     """Cache status."""
+
     HIT = "hit"
     MISS = "miss"
     STALE = "stale"
@@ -98,26 +99,26 @@ class CacheMetrics:
             return 0.0
         return self.stale_hits / (self.hits + self.stale_hits)
 
-    def record_hit(self):
+    def record_hit(self) -> None:
         """Record a cache hit."""
         self.hits += 1
         self.total_requests += 1
 
-    def record_miss(self):
+    def record_miss(self) -> None:
         """Record a cache miss."""
         self.misses += 1
         self.total_requests += 1
 
-    def record_stale_hit(self):
+    def record_stale_hit(self) -> None:
         """Record a stale cache hit."""
         self.stale_hits += 1
         self.total_requests += 1
 
-    def record_eviction(self):
+    def record_eviction(self) -> None:
         """Record an eviction."""
         self.evictions += 1
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset metrics."""
         self.hits = 0
         self.misses = 0
@@ -135,5 +136,5 @@ class CacheMetrics:
             "total_requests": self.total_requests,
             "hit_rate": self.hit_rate,
             "miss_rate": self.miss_rate,
-            "stale_rate": self.stale_rate
+            "stale_rate": self.stale_rate,
         }

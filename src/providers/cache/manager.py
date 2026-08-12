@@ -1,17 +1,17 @@
 """Cache manager for multi-provider AI gateway."""
 
-from typing import Optional, Any, Dict
 from datetime import datetime
+from typing import Any, Dict, Optional
 
 from .base import CacheBackend
+from .models import CacheEntry, CacheMetrics, CacheResult, CacheStatus
 from .sqlite_cache import SQLiteCache
-from .models import CacheEntry, CacheResult, CacheMetrics, CacheStatus
 
 
 class CacheManager:
     """Manages caching for the multi-provider gateway."""
 
-    def __init__(self, backend: Optional[CacheBackend] = None):
+    def __init__(self, backend: Optional[CacheBackend] = None) -> None:
         """
         Initialize cache manager.
 
@@ -29,9 +29,9 @@ class CacheManager:
             "gpt-3.5-turbo-16k": 1800,  # 30 minutes
         }
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the cache backend."""
-        if hasattr(self.backend, 'initialize'):
+        if hasattr(self.backend, "initialize"):
             await self.backend.initialize()
 
     async def get(self, key: str) -> CacheResult:
@@ -45,11 +45,7 @@ class CacheManager:
             CacheResult
         """
         if not self.enabled:
-            return CacheResult(
-                status=CacheStatus.MISS,
-                entry=None,
-                key=key
-            )
+            return CacheResult(status=CacheStatus.MISS, entry=None, key=key)
 
         return await self.backend.get(key)
 
@@ -58,7 +54,7 @@ class CacheManager:
         key: str,
         value: Any,
         ttl: Optional[int] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """
         Set a value in cache.
@@ -130,15 +126,15 @@ class CacheManager:
         """
         return self.backend.get_metrics()
 
-    def reset_metrics(self):
+    def reset_metrics(self) -> None:
         """Reset cache metrics."""
         self.backend.reset_metrics()
 
-    def enable(self):
+    def enable(self) -> None:
         """Enable caching."""
         self.enabled = True
 
-    def disable(self):
+    def disable(self) -> None:
         """Disable caching."""
         self.enabled = False
 
@@ -151,7 +147,7 @@ class CacheManager:
         """
         return self.enabled
 
-    def set_model_ttl(self, model: str, ttl: int):
+    def set_model_ttl(self, model: str, ttl: int) -> None:
         """
         Set default TTL for a model.
 
@@ -194,7 +190,7 @@ class CacheManager:
             "total_misses": metrics.misses,
             "hit_rate": metrics.hit_rate,
             "estimated_savings_usd": savings,
-            "metrics": metrics.to_dict()
+            "metrics": metrics.to_dict(),
         }
 
     async def get_cache_stats(self) -> Dict[str, Any]:
@@ -213,7 +209,7 @@ class CacheManager:
             "size": size,
             "backend": self.backend.__class__.__name__,
             "metrics": metrics.to_dict(),
-            "cost_savings": savings
+            "cost_savings": savings,
         }
 
 

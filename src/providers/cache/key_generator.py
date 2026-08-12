@@ -2,16 +2,16 @@
 
 import hashlib
 import json
-from typing import Dict, Any, Optional
+from typing import Any, Dict, List
 
 
 def generate_cache_key(
     provider: str,
     model: str,
-    messages: list[Dict[str, Any]],
+    messages: List[Dict[str, Any]],
     temperature: float = 0.7,
     max_tokens: int = 1000,
-    **kwargs
+    **kwargs: Any,
 ) -> str:
     """
     Generate a cache key from request parameters.
@@ -28,10 +28,7 @@ def generate_cache_key(
         Cache key string
     """
     # Normalize messages (sort keys to ensure consistent ordering)
-    normalized_messages = [
-        {k: msg[k] for k in sorted(msg.keys())}
-        for msg in messages
-    ]
+    normalized_messages = [{k: msg[k] for k in sorted(msg.keys())} for msg in messages]
 
     # Normalize additional kwargs (sort keys)
     normalized_kwargs = {k: kwargs[k] for k in sorted(kwargs.keys())}
@@ -43,23 +40,19 @@ def generate_cache_key(
         "messages": normalized_messages,
         "temperature": temperature,
         "max_tokens": max_tokens,
-        **normalized_kwargs
+        **normalized_kwargs,
     }
 
     # Serialize to JSON
     key_string = json.dumps(key_components, sort_keys=True)
 
     # Hash with SHA-256
-    key_hash = hashlib.sha256(key_string.encode('utf-8')).hexdigest()
+    key_hash = hashlib.sha256(key_string.encode("utf-8")).hexdigest()
 
     return f"{provider}:{model}:{key_hash[:16]}"
 
 
-def generate_cache_key_from_request(
-    provider: str,
-    model: str,
-    request: Dict[str, Any]
-) -> str:
+def generate_cache_key_from_request(provider: str, model: str, request: Dict[str, Any]) -> str:
     """
     Generate a cache key from a request dictionary.
 
@@ -77,8 +70,7 @@ def generate_cache_key_from_request(
 
     # Extract additional parameters (exclude messages, temperature, max_tokens)
     additional_params = {
-        k: v for k, v in request.items()
-        if k not in ["messages", "temperature", "max_tokens"]
+        k: v for k, v in request.items() if k not in ["messages", "temperature", "max_tokens"]
     }
 
     return generate_cache_key(
@@ -87,11 +79,11 @@ def generate_cache_key_from_request(
         messages=messages,
         temperature=temperature,
         max_tokens=max_tokens,
-        **additional_params
+        **additional_params,
     )
 
 
-def normalize_messages(messages: list[Dict[str, Any]]) -> list[Dict[str, Any]]:
+def normalize_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Normalize messages for cache key generation.
 
@@ -121,4 +113,4 @@ def hash_string(value: str) -> str:
     Returns:
         Hashed string (16 chars)
     """
-    return hashlib.sha256(value.encode('utf-8')).hexdigest()[:16]
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]

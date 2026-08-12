@@ -1,17 +1,18 @@
 """Tests for budget enforcement."""
 
-import pytest
 from datetime import datetime, timedelta
 
-from src.providers.budget.models import (
-    BudgetAlertType,
-    BudgetStatus,
-    BudgetConfig,
-    BudgetAlert,
-    BudgetUsage,
-    BudgetReport
-)
+import pytest
+
 from src.providers.budget.manager import BudgetManager, get_budget_manager
+from src.providers.budget.models import (
+    BudgetAlert,
+    BudgetAlertType,
+    BudgetConfig,
+    BudgetReport,
+    BudgetStatus,
+    BudgetUsage,
+)
 
 
 class TestBudgetConfig:
@@ -25,7 +26,7 @@ class TestBudgetConfig:
             monthly_limit_usd=300.0,
             alerts_enabled=True,
             pause_on_exceed=True,
-            auto_renewal=True
+            auto_renewal=True,
         )
 
         assert config.provider_name == "openai"
@@ -36,18 +37,10 @@ class TestBudgetConfig:
     def test_budget_config_validation(self):
         """Test budget configuration validation."""
         with pytest.raises(ValueError, match="Daily limit must be positive"):
-            BudgetConfig(
-                provider_name="openai",
-                daily_limit_usd=0.0,
-                monthly_limit_usd=300.0
-            )
+            BudgetConfig(provider_name="openai", daily_limit_usd=0.0, monthly_limit_usd=300.0)
 
         with pytest.raises(ValueError, match="Monthly limit must be positive"):
-            BudgetConfig(
-                provider_name="openai",
-                daily_limit_usd=10.0,
-                monthly_limit_usd=0.0
-            )
+            BudgetConfig(provider_name="openai", daily_limit_usd=10.0, monthly_limit_usd=0.0)
 
 
 class TestBudgetUsage:
@@ -137,9 +130,7 @@ class TestBudgetManager:
         manager = BudgetManager()
 
         manager.configure_provider(
-            provider_name="openai",
-            daily_limit_usd=5.0,
-            monthly_limit_usd=150.0
+            provider_name="openai", daily_limit_usd=5.0, monthly_limit_usd=150.0
         )
 
         assert "openai" in manager._configs
@@ -160,10 +151,7 @@ class TestBudgetManager:
         """Test recording usage."""
         manager = BudgetManager()
 
-        manager.configure_provider(
-            provider_name="openai",
-            daily_limit_usd=10.0
-        )
+        manager.configure_provider(provider_name="openai", daily_limit_usd=10.0)
 
         alert = manager.record_usage("openai", 0.5)
 
@@ -176,10 +164,7 @@ class TestBudgetManager:
         """Test budget check when OK."""
         manager = BudgetManager()
 
-        manager.configure_provider(
-            provider_name="openai",
-            daily_limit_usd=10.0
-        )
+        manager.configure_provider(provider_name="openai", daily_limit_usd=10.0)
 
         manager.record_usage("openai", 0.5)
 
@@ -193,9 +178,7 @@ class TestBudgetManager:
         manager = BudgetManager()
 
         manager.configure_provider(
-            provider_name="openai",
-            daily_limit_usd=10.0,
-            pause_on_exceed=True
+            provider_name="openai", daily_limit_usd=10.0, pause_on_exceed=True
         )
 
         manager.record_usage("openai", 10.0)
@@ -248,9 +231,7 @@ class TestBudgetManager:
         manager = BudgetManager()
 
         manager.configure_provider(
-            provider_name="openai",
-            daily_limit_usd=10.0,
-            monthly_limit_usd=100.0
+            provider_name="openai", daily_limit_usd=10.0, monthly_limit_usd=100.0
         )
 
         manager.record_usage("openai", 0.5)
@@ -285,9 +266,7 @@ class TestBudgetManager:
         manager = BudgetManager()
 
         manager.configure_provider(
-            provider_name="openai",
-            daily_limit_usd=10.0,
-            alerts_enabled=True
+            provider_name="openai", daily_limit_usd=10.0, alerts_enabled=True
         )
 
         alert = manager.record_usage("openai", 8.0)
@@ -301,9 +280,7 @@ class TestBudgetManager:
         manager = BudgetManager()
 
         manager.configure_provider(
-            provider_name="openai",
-            daily_limit_usd=10.0,
-            alerts_enabled=True
+            provider_name="openai", daily_limit_usd=10.0, alerts_enabled=True
         )
 
         alert = manager.record_usage("openai", 9.0)
@@ -317,9 +294,7 @@ class TestBudgetManager:
         manager = BudgetManager()
 
         manager.configure_provider(
-            provider_name="openai",
-            daily_limit_usd=10.0,
-            alerts_enabled=True
+            provider_name="openai", daily_limit_usd=10.0, alerts_enabled=True
         )
 
         alert = manager.record_usage("openai", 10.0)
@@ -339,9 +314,7 @@ class TestBudgetManager:
         manager.register_alert_callback(callback)
 
         manager.configure_provider(
-            provider_name="openai",
-            daily_limit_usd=10.0,
-            alerts_enabled=True
+            provider_name="openai", daily_limit_usd=10.0, alerts_enabled=True
         )
 
         manager.record_usage("openai", 8.0)
@@ -414,7 +387,7 @@ class TestBudgetReport:
             monthly_percentage=50.0,
             daily_request_count=10,
             monthly_request_count=100,
-            avg_cost_per_request=0.05
+            avg_cost_per_request=0.05,
         )
 
         assert report.provider_name == "openai"
@@ -434,7 +407,7 @@ class TestBudgetReport:
             monthly_percentage=50.0,
             daily_request_count=10,
             monthly_request_count=100,
-            avg_cost_per_request=0.05
+            avg_cost_per_request=0.05,
         )
 
         d = report.to_dict()

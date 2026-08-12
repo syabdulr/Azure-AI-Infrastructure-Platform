@@ -1,19 +1,20 @@
 """Tests for response normalization."""
 
-import pytest
 from datetime import datetime
 
-from src.providers.normalization.models import (
-    NormalizationError,
-    ToolCall,
-    LogProb,
-    UsageStatistics,
-    NormalizedResponse,
-    NormalizationResult
-)
+import pytest
+
 from src.providers.normalization.azure_openai_adapter import AzureOpenAIAdapter
-from src.providers.normalization.openai_adapter import OpenAIAdapter
+from src.providers.normalization.models import (
+    LogProb,
+    NormalizationError,
+    NormalizationResult,
+    NormalizedResponse,
+    ToolCall,
+    UsageStatistics,
+)
 from src.providers.normalization.normalizer import ResponseNormalizer, get_normalizer
+from src.providers.normalization.openai_adapter import OpenAIAdapter
 
 
 class TestNormalizedResponse:
@@ -27,7 +28,7 @@ class TestNormalizedResponse:
             total_tokens=150,
             prompt_cost=0.001,
             completion_cost=0.0005,
-            total_cost=0.0015
+            total_cost=0.0015,
         )
 
         response = NormalizedResponse(
@@ -39,7 +40,7 @@ class TestNormalizedResponse:
             timestamp=datetime.now(),
             finish_reason="stop",
             tool_calls=[],
-            logprobs=None
+            logprobs=None,
         )
 
         assert response.content == "Test response"
@@ -53,10 +54,7 @@ class TestNormalizedResponse:
     def test_tool_call_model(self):
         """Test creating a tool call."""
         tool_call = ToolCall(
-            id="call_123",
-            name="weather",
-            arguments='{"location": "NYC"}',
-            type="function"
+            id="call_123", name="weather", arguments='{"location": "NYC"}', type="function"
         )
 
         assert tool_call.id == "call_123"
@@ -65,11 +63,7 @@ class TestNormalizedResponse:
 
     def test_log_prob_model(self):
         """Test creating a log probability."""
-        logprob = LogProb(
-            token="hello",
-            logprob=-0.5,
-            top_logprobs=[{"hello": -0.5}, {"hi": -1.0}]
-        )
+        logprob = LogProb(token="hello", logprob=-0.5, top_logprobs=[{"hello": -0.5}, {"hi": -1.0}])
 
         assert logprob.token == "hello"
         assert logprob.logprob == -0.5
@@ -84,14 +78,8 @@ class TestAzureOpenAIAdapter:
         adapter = AzureOpenAIAdapter()
 
         raw_response = {
-            "choices": [{
-                "message": {"content": "Hello, world!"},
-                "finish_reason": "stop"
-            }],
-            "usage": {
-                "prompt_tokens": 10,
-                "completion_tokens": 5
-            }
+            "choices": [{"message": {"content": "Hello, world!"}, "finish_reason": "stop"}],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 5},
         }
 
         result = adapter.normalize(
@@ -99,7 +87,7 @@ class TestAzureOpenAIAdapter:
             model_name="gpt-4",
             prompt_tokens=10,
             completion_tokens=5,
-            cost_per_1k=0.03
+            cost_per_1k=0.03,
         )
 
         assert result.success is True
@@ -114,20 +102,21 @@ class TestAzureOpenAIAdapter:
         adapter = AzureOpenAIAdapter()
 
         raw_response = {
-            "choices": [{
-                "message": {
-                    "content": "",
-                    "tool_calls": [{
-                        "id": "call_123",
-                        "type": "function",
-                        "function": {
-                            "name": "weather",
-                            "arguments": '{"location": "NYC"}'
-                        }
-                    }]
-                },
-                "finish_reason": "tool_calls"
-            }]
+            "choices": [
+                {
+                    "message": {
+                        "content": "",
+                        "tool_calls": [
+                            {
+                                "id": "call_123",
+                                "type": "function",
+                                "function": {"name": "weather", "arguments": '{"location": "NYC"}'},
+                            }
+                        ],
+                    },
+                    "finish_reason": "tool_calls",
+                }
+            ]
         }
 
         result = adapter.normalize(
@@ -135,7 +124,7 @@ class TestAzureOpenAIAdapter:
             model_name="gpt-4",
             prompt_tokens=20,
             completion_tokens=10,
-            cost_per_1k=0.03
+            cost_per_1k=0.03,
         )
 
         assert result.success is True
@@ -146,18 +135,14 @@ class TestAzureOpenAIAdapter:
         """Test normalizing an error response."""
         adapter = AzureOpenAIAdapter()
 
-        raw_response = {
-            "error": {
-                "message": "Rate limit exceeded"
-            }
-        }
+        raw_response = {"error": {"message": "Rate limit exceeded"}}
 
         result = adapter.normalize(
             raw_response=raw_response,
             model_name="gpt-4",
             prompt_tokens=0,
             completion_tokens=0,
-            cost_per_1k=0.03
+            cost_per_1k=0.03,
         )
 
         assert result.success is False
@@ -173,10 +158,7 @@ class TestOpenAIAdapter:
         adapter = OpenAIAdapter()
 
         raw_response = {
-            "choices": [{
-                "message": {"content": "AI response"},
-                "finish_reason": "stop"
-            }]
+            "choices": [{"message": {"content": "AI response"}, "finish_reason": "stop"}]
         }
 
         result = adapter.normalize(
@@ -184,7 +166,7 @@ class TestOpenAIAdapter:
             model_name="gpt-3.5-turbo",
             prompt_tokens=15,
             completion_tokens=10,
-            cost_per_1k=0.002
+            cost_per_1k=0.002,
         )
 
         assert result.success is True
@@ -214,10 +196,7 @@ class TestResponseNormalizer:
         normalizer = get_normalizer()
 
         raw_response = {
-            "choices": [{
-                "message": {"content": "Test content"},
-                "finish_reason": "stop"
-            }]
+            "choices": [{"message": {"content": "Test content"}, "finish_reason": "stop"}]
         }
 
         result = normalizer.normalize(
@@ -226,7 +205,7 @@ class TestResponseNormalizer:
             model_name="gpt-4",
             prompt_tokens=5,
             completion_tokens=3,
-            cost_per_1k=0.03
+            cost_per_1k=0.03,
         )
 
         assert result.success is True
@@ -238,10 +217,7 @@ class TestResponseNormalizer:
         normalizer = get_normalizer()
 
         raw_response = {
-            "choices": [{
-                "message": {"content": "OpenAI content"},
-                "finish_reason": "stop"
-            }]
+            "choices": [{"message": {"content": "OpenAI content"}, "finish_reason": "stop"}]
         }
 
         result = normalizer.normalize(
@@ -250,7 +226,7 @@ class TestResponseNormalizer:
             model_name="gpt-3.5-turbo",
             prompt_tokens=8,
             completion_tokens=4,
-            cost_per_1k=0.002
+            cost_per_1k=0.002,
         )
 
         assert result.success is True
@@ -269,7 +245,7 @@ class TestResponseNormalizer:
             model_name="claude-3",
             prompt_tokens=5,
             completion_tokens=3,
-            cost_per_1k=0.015
+            cost_per_1k=0.015,
         )
 
         assert result.success is False
@@ -282,10 +258,7 @@ class TestResponseNormalizer:
         normalizer = get_normalizer()
 
         raw_response = {
-            "choices": [{
-                "message": {"content": "Timed response"},
-                "finish_reason": "stop"
-            }]
+            "choices": [{"message": {"content": "Timed response"}, "finish_reason": "stop"}]
         }
 
         result = normalizer.normalize(
@@ -294,7 +267,7 @@ class TestResponseNormalizer:
             model_name="gpt-3.5-turbo",
             prompt_tokens=5,
             completion_tokens=3,
-            cost_per_1k=0.002
+            cost_per_1k=0.002,
         )
 
         assert result.normalization_duration_ms >= 0
@@ -315,7 +288,7 @@ class TestNormalizationErrorHandling:
             model_name="gpt-4",
             prompt_tokens=5,
             completion_tokens=0,
-            cost_per_1k=0.03
+            cost_per_1k=0.03,
         )
 
         assert len(result.warnings) > 0
@@ -332,7 +305,7 @@ class TestNormalizationErrorHandling:
             model_name="gpt-3.5-turbo",
             prompt_tokens=5,
             completion_tokens=0,
-            cost_per_1k=0.002
+            cost_per_1k=0.002,
         )
 
         assert len(result.warnings) > 0 or len(result.errors) > 0
@@ -342,16 +315,15 @@ class TestNormalizationErrorHandling:
         adapter = AzureOpenAIAdapter()
 
         raw_response = {
-            "choices": [{
-                "message": {
-                    "content": "",
-                    "tool_calls": [{
-                        "id": "call_123",
-                        "function": {}  # Missing name
-                    }]
-                },
-                "finish_reason": "tool_calls"
-            }]
+            "choices": [
+                {
+                    "message": {
+                        "content": "",
+                        "tool_calls": [{"id": "call_123", "function": {}}],  # Missing name
+                    },
+                    "finish_reason": "tool_calls",
+                }
+            ]
         }
 
         result = adapter.normalize(
@@ -359,10 +331,12 @@ class TestNormalizationErrorHandling:
             model_name="gpt-4",
             prompt_tokens=10,
             completion_tokens=5,
-            cost_per_1k=0.03
+            cost_per_1k=0.03,
         )
 
         assert len(result.warnings) > 0
         # Check that one of the warnings is about missing function name
-        has_missing_name_warning = any("missing function name" in warning.lower() for warning in result.warnings)
+        has_missing_name_warning = any(
+            "missing function name" in warning.lower() for warning in result.warnings
+        )
         assert has_missing_name_warning

@@ -1,20 +1,21 @@
 """Integration tests for multi-provider routing."""
 
-import pytest
 import asyncio
-from unittest.mock import Mock, AsyncMock, patch
 from datetime import datetime
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 from src.providers import (
-    ProviderRegistry,
-    create_azure_openai_provider,
-    create_openai_provider,
     GatewayRequest,
     GatewayResponse,
-    RoutingStrategy,
-    ProviderStatus,
     ModelCapability,
-    ProviderError
+    ProviderError,
+    ProviderRegistry,
+    ProviderStatus,
+    RoutingStrategy,
+    create_azure_openai_provider,
+    create_openai_provider,
 )
 
 
@@ -26,10 +27,13 @@ class TestProviderRegistration:
         """Test registering a provider."""
         registry = ProviderRegistry()
 
-        with patch.dict('os.environ', {
-            'AZURE_OPENAI_KEY': 'test_key',
-            'AZURE_OPENAI_ENDPOINT': 'https://test.openai.azure.com'
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "AZURE_OPENAI_KEY": "test_key",
+                "AZURE_OPENAI_ENDPOINT": "https://test.openai.azure.com",
+            },
+        ):
             provider = create_azure_openai_provider(name="test_azure")
 
         await registry.register(provider, skip_health_check=True)
@@ -42,10 +46,13 @@ class TestProviderRegistration:
         """Test that registering duplicate provider fails."""
         registry = ProviderRegistry()
 
-        with patch.dict('os.environ', {
-            'AZURE_OPENAI_KEY': 'test_key',
-            'AZURE_OPENAI_ENDPOINT': 'https://test.openai.azure.com'
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "AZURE_OPENAI_KEY": "test_key",
+                "AZURE_OPENAI_ENDPOINT": "https://test.openai.azure.com",
+            },
+        ):
             provider1 = create_azure_openai_provider(name="test_azure")
             provider2 = create_azure_openai_provider(name="test_azure")
 
@@ -61,10 +68,13 @@ class TestProviderRegistration:
         """Test unregistering a provider."""
         registry = ProviderRegistry()
 
-        with patch.dict('os.environ', {
-            'AZURE_OPENAI_KEY': 'test_key',
-            'AZURE_OPENAI_ENDPOINT': 'https://test.openai.azure.com'
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "AZURE_OPENAI_KEY": "test_key",
+                "AZURE_OPENAI_ENDPOINT": "https://test.openai.azure.com",
+            },
+        ):
             provider = create_azure_openai_provider(name="test_azure")
 
         await registry.register(provider, skip_health_check=True)
@@ -78,11 +88,14 @@ class TestProviderRegistration:
         """Test filtering healthy providers."""
         registry = ProviderRegistry()
 
-        with patch.dict('os.environ', {
-            'AZURE_OPENAI_KEY': 'test_key',
-            'AZURE_OPENAI_ENDPOINT': 'https://test.openai.azure.com',
-            'OPENAI_API_KEY': 'test_key'
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "AZURE_OPENAI_KEY": "test_key",
+                "AZURE_OPENAI_ENDPOINT": "https://test.openai.azure.com",
+                "OPENAI_API_KEY": "test_key",
+            },
+        ):
             provider1 = create_azure_openai_provider(name="test_azure")
             provider2 = create_openai_provider(name="test_openai")
 
@@ -93,22 +106,24 @@ class TestProviderRegistration:
         # Mock health check before registration to prevent API calls
         async def mock_health_check_healthy():
             from src.providers.models import HealthCheckResult
+
             return HealthCheckResult(
                 provider_name="test_azure",
                 status=ProviderStatus.HEALTHY,
                 timestamp=datetime.now(),
                 latency_ms=100.0,
-                success_rate=0.99
+                success_rate=0.99,
             )
 
         async def mock_health_check_degraded():
             from src.providers.models import HealthCheckResult
+
             return HealthCheckResult(
                 provider_name="test_openai",
                 status=ProviderStatus.DEGRADED,
                 timestamp=datetime.now(),
                 latency_ms=3000.0,
-                success_rate=0.85
+                success_rate=0.85,
             )
 
         provider1.health_check = mock_health_check_healthy
@@ -131,11 +146,14 @@ class TestRoundRobinRouting:
         """Test that round-robin distributes requests evenly."""
         registry = ProviderRegistry()
 
-        with patch.dict('os.environ', {
-            'AZURE_OPENAI_KEY': 'test_key',
-            'AZURE_OPENAI_ENDPOINT': 'https://test.openai.azure.com',
-            'OPENAI_API_KEY': 'test_key'
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "AZURE_OPENAI_KEY": "test_key",
+                "AZURE_OPENAI_ENDPOINT": "https://test.openai.azure.com",
+                "OPENAI_API_KEY": "test_key",
+            },
+        ):
             provider1 = create_azure_openai_provider(name="test_azure")
             provider2 = create_openai_provider(name="test_openai")
 
@@ -146,12 +164,13 @@ class TestRoundRobinRouting:
         # Mock health checks to prevent API calls
         async def mock_health_check():
             from src.providers.models import HealthCheckResult
+
             return HealthCheckResult(
                 provider_name="test_azure",
                 status=ProviderStatus.HEALTHY,
                 timestamp=datetime.now(),
                 latency_ms=100.0,
-                success_rate=0.99
+                success_rate=0.99,
             )
 
         provider1.health_check = mock_health_check
@@ -211,7 +230,7 @@ class TestRoundRobinRouting:
                 max_tokens=1000,
                 temperature=0.7,
                 allow_degraded_providers=False,
-                routing_strategy=RoutingStrategy.ROUND_ROBIN
+                routing_strategy=RoutingStrategy.ROUND_ROBIN,
             )
             response = await registry.route_request(request)
             # Verify response came from expected provider
@@ -232,11 +251,14 @@ class TestHealthBasedRouting:
         """Test that health-based routing only uses healthy providers."""
         registry = ProviderRegistry()
 
-        with patch.dict('os.environ', {
-            'AZURE_OPENAI_KEY': 'test_key',
-            'AZURE_OPENAI_ENDPOINT': 'https://test.openai.azure.com',
-            'OPENAI_API_KEY': 'test_key'
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "AZURE_OPENAI_KEY": "test_key",
+                "AZURE_OPENAI_ENDPOINT": "https://test.openai.azure.com",
+                "OPENAI_API_KEY": "test_key",
+            },
+        ):
             provider1 = create_azure_openai_provider(name="test_azure")
             provider2 = create_openai_provider(name="test_openai")
 
@@ -247,22 +269,24 @@ class TestHealthBasedRouting:
         # Mock health checks
         async def mock_health_check_healthy():
             from src.providers.models import HealthCheckResult
+
             return HealthCheckResult(
                 provider_name="test_azure",
                 status=ProviderStatus.HEALTHY,
                 timestamp=datetime.now(),
                 latency_ms=100.0,
-                success_rate=0.99
+                success_rate=0.99,
             )
 
         async def mock_health_check_degraded():
             from src.providers.models import HealthCheckResult
+
             return HealthCheckResult(
                 provider_name="test_openai",
                 status=ProviderStatus.DEGRADED,
                 timestamp=datetime.now(),
                 latency_ms=3000.0,
-                success_rate=0.85
+                success_rate=0.85,
             )
 
         provider1.health_check = mock_health_check_healthy
@@ -282,7 +306,7 @@ class TestHealthBasedRouting:
             max_tokens=1000,
             temperature=0.7,
             allow_degraded_providers=False,
-            routing_strategy=RoutingStrategy.HEALTH_BASED
+            routing_strategy=RoutingStrategy.HEALTH_BASED,
         )
 
         decision = await registry._make_routing_decision(request, RoutingStrategy.HEALTH_BASED)
@@ -300,11 +324,14 @@ class TestFailoverScenarios:
         """Test that failover works when primary provider fails."""
         registry = ProviderRegistry()
 
-        with patch.dict('os.environ', {
-            'AZURE_OPENAI_KEY': 'test_key',
-            'AZURE_OPENAI_ENDPOINT': 'https://test.openai.azure.com',
-            'OPENAI_API_KEY': 'test_key'
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "AZURE_OPENAI_KEY": "test_key",
+                "AZURE_OPENAI_ENDPOINT": "https://test.openai.azure.com",
+                "OPENAI_API_KEY": "test_key",
+            },
+        ):
             provider1 = create_azure_openai_provider(name="test_azure")
             provider2 = create_openai_provider(name="test_openai")
 
@@ -314,12 +341,13 @@ class TestFailoverScenarios:
         # Mock health checks
         async def mock_health_check():
             from src.providers.models import HealthCheckResult
+
             return HealthCheckResult(
                 provider_name="test_azure",
                 status=ProviderStatus.HEALTHY,
                 timestamp=datetime.now(),
                 latency_ms=100.0,
-                success_rate=0.99
+                success_rate=0.99,
             )
 
         provider1.health_check = mock_health_check
@@ -359,7 +387,7 @@ class TestFailoverScenarios:
             max_tokens=1000,
             temperature=0.7,
             allow_degraded_providers=False,
-            routing_strategy=RoutingStrategy.ROUND_ROBIN
+            routing_strategy=RoutingStrategy.ROUND_ROBIN,
         )
 
         response = await registry.route_request(request)
@@ -374,11 +402,14 @@ class TestFailoverScenarios:
         """Test that error is raised when all providers fail."""
         registry = ProviderRegistry()
 
-        with patch.dict('os.environ', {
-            'AZURE_OPENAI_KEY': 'test_key',
-            'AZURE_OPENAI_ENDPOINT': 'https://test.openai.azure.com',
-            'OPENAI_API_KEY': 'test_key'
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "AZURE_OPENAI_KEY": "test_key",
+                "AZURE_OPENAI_ENDPOINT": "https://test.openai.azure.com",
+                "OPENAI_API_KEY": "test_key",
+            },
+        ):
             provider1 = create_azure_openai_provider(name="test_azure")
             provider2 = create_openai_provider(name="test_openai")
 
@@ -388,12 +419,13 @@ class TestFailoverScenarios:
         # Mock health checks
         async def mock_health_check():
             from src.providers.models import HealthCheckResult
+
             return HealthCheckResult(
                 provider_name="test_azure",
                 status=ProviderStatus.HEALTHY,
                 timestamp=datetime.now(),
                 latency_ms=100.0,
-                success_rate=0.99
+                success_rate=0.99,
             )
 
         provider1.health_check = mock_health_check
@@ -415,13 +447,15 @@ class TestFailoverScenarios:
             max_tokens=1000,
             temperature=0.7,
             allow_degraded_providers=False,
-            routing_strategy=RoutingStrategy.ROUND_ROBIN
+            routing_strategy=RoutingStrategy.ROUND_ROBIN,
         )
 
         with pytest.raises(ProviderError) as exc_info:
             await registry.route_request(request)
 
-        assert "All providers failed" in str(exc_info.value) or "No available providers" in str(exc_info.value)
+        assert "All providers failed" in str(exc_info.value) or "No available providers" in str(
+            exc_info.value
+        )
 
 
 class TestEndToEndRequestFlow:
@@ -432,11 +466,14 @@ class TestEndToEndRequestFlow:
         """Test complete request flow with cost-optimized routing."""
         registry = ProviderRegistry()
 
-        with patch.dict('os.environ', {
-            'AZURE_OPENAI_KEY': 'test_key',
-            'AZURE_OPENAI_ENDPOINT': 'https://test.openai.azure.com',
-            'OPENAI_API_KEY': 'test_key'
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "AZURE_OPENAI_KEY": "test_key",
+                "AZURE_OPENAI_ENDPOINT": "https://test.openai.azure.com",
+                "OPENAI_API_KEY": "test_key",
+            },
+        ):
             provider1 = create_azure_openai_provider(name="test_azure")
             provider2 = create_openai_provider(name="test_openai")
 
@@ -446,12 +483,13 @@ class TestEndToEndRequestFlow:
         # Mock health checks
         async def mock_health_check():
             from src.providers.models import HealthCheckResult
+
             return HealthCheckResult(
                 provider_name="test_azure",
                 status=ProviderStatus.HEALTHY,
                 timestamp=datetime.now(),
                 latency_ms=100.0,
-                success_rate=0.99
+                success_rate=0.99,
             )
 
         provider1.health_check = mock_health_check
@@ -465,7 +503,9 @@ class TestEndToEndRequestFlow:
             mock_response = Mock(spec=GatewayResponse)
             mock_response.content = f"Generated response using {model}"
             mock_response.model = model
-            mock_response.provider = provider1.config.name if "azure" in model else provider2.config.name
+            mock_response.provider = (
+                provider1.config.name if "azure" in model else provider2.config.name
+            )
             mock_response.routing_strategy = request.routing_strategy
             mock_response.routing_reason = "Test"
             mock_response.tokens_used = 50
@@ -487,7 +527,7 @@ class TestEndToEndRequestFlow:
             temperature=0.7,
             allow_degraded_providers=False,
             routing_strategy=RoutingStrategy.COST_OPTIMIZED,
-            model_requirements={ModelCapability.CODE}
+            model_requirements={ModelCapability.CODE},
         )
 
         response = await registry.route_request(request)
@@ -504,9 +544,7 @@ class TestEndToEndRequestFlow:
         """Test request with tenant ID for budget tracking."""
         registry = ProviderRegistry()
 
-        with patch.dict('os.environ', {
-            'OPENAI_API_KEY': 'test_key'
-        }):
+        with patch.dict("os.environ", {"OPENAI_API_KEY": "test_key"}):
             provider = create_openai_provider(name="test_openai")
 
         provider.status = ProviderStatus.HEALTHY
@@ -514,12 +552,13 @@ class TestEndToEndRequestFlow:
         # Mock health check
         async def mock_health_check():
             from src.providers.models import HealthCheckResult
+
             return HealthCheckResult(
                 provider_name="test_openai",
                 status=ProviderStatus.HEALTHY,
                 timestamp=datetime.now(),
                 latency_ms=100.0,
-                success_rate=0.99
+                success_rate=0.99,
             )
 
         provider.health_check = mock_health_check
@@ -551,7 +590,7 @@ class TestEndToEndRequestFlow:
             user_id="user_xyz",
             max_tokens=1000,
             temperature=0.7,
-            allow_degraded_providers=False
+            allow_degraded_providers=False,
         )
 
         response = await registry.route_request(request)
@@ -568,21 +607,25 @@ class TestHealthMonitoring:
         """Test periodic health checks."""
         registry = ProviderRegistry()
 
-        with patch.dict('os.environ', {
-            'AZURE_OPENAI_KEY': 'test_key',
-            'AZURE_OPENAI_ENDPOINT': 'https://test.openai.azure.com'
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "AZURE_OPENAI_KEY": "test_key",
+                "AZURE_OPENAI_ENDPOINT": "https://test.openai.azure.com",
+            },
+        ):
             provider = create_azure_openai_provider(name="test_azure")
 
         # Mock health check
         async def mock_health_check():
             from src.providers.models import HealthCheckResult
+
             return HealthCheckResult(
                 provider_name="test_azure",
                 status=ProviderStatus.HEALTHY,
                 timestamp=datetime.now(),
                 latency_ms=100.0,
-                success_rate=0.99
+                success_rate=0.99,
             )
 
         provider.health_check = mock_health_check

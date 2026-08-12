@@ -1,22 +1,23 @@
 """Unit tests for Azure OpenAI and OpenAI providers."""
 
-import pytest
 import asyncio
-from unittest.mock import Mock, AsyncMock, patch
 from datetime import datetime
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 from src.providers.azure_openai import AzureOpenAIProvider, create_azure_openai_provider
-from src.providers.openai import OpenAIProvider, create_openai_provider
 from src.providers.base import ProviderError
 from src.providers.models import (
-    ProviderConfig,
-    ModelConfig,
-    ProviderStatus,
     GatewayRequest,
     GatewayResponse,
+    ModelCapability,
+    ModelConfig,
+    ProviderConfig,
+    ProviderStatus,
     RoutingStrategy,
-    ModelCapability
 )
+from src.providers.openai import OpenAIProvider, create_openai_provider
 
 
 class TestAzureOpenAIProvider:
@@ -35,15 +36,15 @@ class TestAzureOpenAIProvider:
                     name="gpt-4",
                     cost_per_1k_tokens=0.03,
                     max_tokens=8192,
-                    capabilities={ModelCapability.CHAT, ModelCapability.REASONING}
+                    capabilities={ModelCapability.CHAT, ModelCapability.REASONING},
                 )
-            }
+            },
         )
 
     @pytest.fixture
     def provider(self, provider_config):
         """Create Azure OpenAI provider for testing."""
-        with patch('src.providers.azure_openai.openai.AzureOpenAI'):
+        with patch("src.providers.azure_openai.openai.AzureOpenAI"):
             return AzureOpenAIProvider(provider_config)
 
     def test_provider_initialization(self, provider):
@@ -70,10 +71,7 @@ class TestAzureOpenAIProvider:
         mock_client.chat.completions.create.return_value = mock_completion
 
         request = GatewayRequest(
-            prompt="Test prompt",
-            request_id="test_123",
-            max_tokens=1000,
-            temperature=0.7
+            prompt="Test prompt", request_id="test_123", max_tokens=1000, temperature=0.7
         )
 
         # Generate response
@@ -119,10 +117,13 @@ class TestAzureOpenAIProvider:
 
     def test_create_azure_openai_provider_factory(self):
         """Test factory function for creating Azure OpenAI provider."""
-        with patch.dict('os.environ', {
-            'AZURE_OPENAI_KEY': 'test_key',
-            'AZURE_OPENAI_ENDPOINT': 'https://test.openai.azure.com'
-        }):
+        with patch.dict(
+            "os.environ",
+            {
+                "AZURE_OPENAI_KEY": "test_key",
+                "AZURE_OPENAI_ENDPOINT": "https://test.openai.azure.com",
+            },
+        ):
             provider = create_azure_openai_provider(name="test_azure")
 
             assert provider.config.name == "test_azure"
@@ -145,15 +146,15 @@ class TestOpenAIProvider:
                     name="gpt-4",
                     cost_per_1k_tokens=0.03,
                     max_tokens=8192,
-                    capabilities={ModelCapability.CHAT, ModelCapability.REASONING}
+                    capabilities={ModelCapability.CHAT, ModelCapability.REASONING},
                 )
-            }
+            },
         )
 
     @pytest.fixture
     def provider(self, provider_config):
         """Create OpenAI provider for testing."""
-        with patch('src.providers.openai.openai.OpenAI'):
+        with patch("src.providers.openai.openai.OpenAI"):
             return OpenAIProvider(provider_config)
 
     def test_provider_initialization(self, provider):
@@ -180,10 +181,7 @@ class TestOpenAIProvider:
         mock_client.chat.completions.create.return_value = mock_completion
 
         request = GatewayRequest(
-            prompt="Test prompt",
-            request_id="test_123",
-            max_tokens=1000,
-            temperature=0.7
+            prompt="Test prompt", request_id="test_123", max_tokens=1000, temperature=0.7
         )
 
         # Generate response
@@ -229,7 +227,7 @@ class TestOpenAIProvider:
 
     def test_create_openai_provider_factory(self):
         """Test factory function for creating OpenAI provider."""
-        with patch.dict('os.environ', {'OPENAI_API_KEY': 'test_key'}):
+        with patch.dict("os.environ", {"OPENAI_API_KEY": "test_key"}):
             provider = create_openai_provider(name="test_openai")
 
             assert provider.config.name == "test_openai"
@@ -253,11 +251,11 @@ class TestProviderErrorHandling:
                     name="gpt-4",
                     cost_per_1k_tokens=0.03,
                     max_tokens=8192,
-                    capabilities={ModelCapability.CHAT}
+                    capabilities={ModelCapability.CHAT},
                 )
-            }
+            },
         )
-        with patch('src.providers.azure_openai.openai.AzureOpenAI'):
+        with patch("src.providers.azure_openai.openai.AzureOpenAI"):
             return AzureOpenAIProvider(config)
 
     @pytest.fixture
@@ -272,11 +270,11 @@ class TestProviderErrorHandling:
                     name="gpt-4",
                     cost_per_1k_tokens=0.03,
                     max_tokens=8192,
-                    capabilities={ModelCapability.CHAT}
+                    capabilities={ModelCapability.CHAT},
                 )
-            }
+            },
         )
-        with patch('src.providers.openai.openai.OpenAI'):
+        with patch("src.providers.openai.openai.OpenAI"):
             return OpenAIProvider(config)
 
     def test_circuit_breaker(self, azure_provider):
@@ -304,10 +302,7 @@ class TestProviderErrorHandling:
         azure_provider._circuit_failure_count = 3
 
         request = GatewayRequest(
-            prompt="Test",
-            max_tokens=1000,
-            temperature=0.7,
-            request_id="test_123"
+            prompt="Test", max_tokens=1000, temperature=0.7, request_id="test_123"
         )
 
         # Should raise error because circuit is open
@@ -349,17 +344,21 @@ class TestModelCapabilities:
                     name="gpt-4",
                     cost_per_1k_tokens=0.03,
                     max_tokens=8192,
-                    capabilities={ModelCapability.CHAT, ModelCapability.REASONING, ModelCapability.CODE}
+                    capabilities={
+                        ModelCapability.CHAT,
+                        ModelCapability.REASONING,
+                        ModelCapability.CODE,
+                    },
                 ),
                 "gpt-35-turbo": ModelConfig(
                     name="gpt-35-turbo",
                     cost_per_1k_tokens=0.002,
                     max_tokens=4096,
-                    capabilities={ModelCapability.CHAT, ModelCapability.SIMPLE_REASONING}
-                )
-            }
+                    capabilities={ModelCapability.CHAT, ModelCapability.SIMPLE_REASONING},
+                ),
+            },
         )
-        with patch('src.providers.azure_openai.openai.AzureOpenAI'):
+        with patch("src.providers.azure_openai.openai.AzureOpenAI"):
             provider = AzureOpenAIProvider(config)
 
             code_models = provider.get_models_with_capability(ModelCapability.CODE)

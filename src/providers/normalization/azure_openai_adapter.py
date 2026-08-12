@@ -1,15 +1,16 @@
 """Azure OpenAI response adapter."""
 
-from typing import Dict, Any, Optional, List
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 from .adapter import ResponseAdapter
-from .models import NormalizedResponse, ToolCall, LogProb, NormalizationResult
+from .models import LogProb, NormalizationResult, NormalizedResponse, ToolCall, UsageStatistics
 
 
 class AzureOpenAIAdapter(ResponseAdapter):
     """Adapter for normalizing Azure OpenAI API responses."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize Azure OpenAI adapter."""
         super().__init__("azure_openai")
         self.supports_tool_calls = True
@@ -22,7 +23,7 @@ class AzureOpenAIAdapter(ResponseAdapter):
         model_name: str,
         prompt_tokens: int,
         completion_tokens: int,
-        cost_per_1k: float
+        cost_per_1k: float,
     ) -> NormalizationResult:
         """
         Normalize Azure OpenAI response.
@@ -41,8 +42,8 @@ class AzureOpenAIAdapter(ResponseAdapter):
 
         start_time = time.time()
 
-        warnings = []
-        errors = []
+        warnings: List[str] = []
+        errors: List[str] = []
 
         # Check if response is an error
         if "error" in raw_response:
@@ -55,11 +56,13 @@ class AzureOpenAIAdapter(ResponseAdapter):
                 provider=self.provider_name,
                 usage=self._create_usage(0, 0, cost_per_1k),
                 latency_ms=0.0,
+                finish_reason=None,
+                request_id=None,
                 error=error_msg,
                 raw_response=raw_response,
                 quality_score=0.0,
                 logprobs=None,
-                cached=False
+                cached=False,
             )
 
             return self.create_result(
@@ -67,7 +70,7 @@ class AzureOpenAIAdapter(ResponseAdapter):
                 response=response,
                 warnings=warnings,
                 errors=errors,
-                normalization_duration_ms=(time.time() - start_time) * 1000
+                normalization_duration_ms=(time.time() - start_time) * 1000,
             )
 
         # Extract content
@@ -104,7 +107,7 @@ class AzureOpenAIAdapter(ResponseAdapter):
                 error=None,
                 raw_response=raw_response,
                 request_id=None,
-                cached=False
+                cached=False,
             )
 
             return self.create_result(
@@ -112,7 +115,7 @@ class AzureOpenAIAdapter(ResponseAdapter):
                 response=response,
                 warnings=warnings,
                 errors=errors,
-                normalization_duration_ms=(time.time() - start_time) * 1000
+                normalization_duration_ms=(time.time() - start_time) * 1000,
             )
         except Exception as e:
             errors.append(f"Failed to create normalized response: {str(e)}")
@@ -131,7 +134,7 @@ class AzureOpenAIAdapter(ResponseAdapter):
                 raw_response=raw_response,
                 request_id=None,
                 cached=False,
-                error=str(e)
+                error=str(e),
             )
 
             return self.create_result(
@@ -139,12 +142,15 @@ class AzureOpenAIAdapter(ResponseAdapter):
                 response=response,
                 warnings=warnings,
                 errors=errors,
-                normalization_duration_ms=(time.time() - start_time) * 1000
+                normalization_duration_ms=(time.time() - start_time) * 1000,
             )
 
-    def _create_usage(self, prompt_tokens: int, completion_tokens: int, cost_per_1k: float):
+    def _create_usage(
+        self, prompt_tokens: int, completion_tokens: int, cost_per_1k: float
+    ) -> UsageStatistics:
         """Create usage statistics."""
         from .models import UsageStatistics
+
         prompt_cost = (prompt_tokens / 1000.0) * cost_per_1k
         completion_cost = (completion_tokens / 1000.0) * cost_per_1k
         return UsageStatistics(
@@ -153,5 +159,5 @@ class AzureOpenAIAdapter(ResponseAdapter):
             total_tokens=prompt_tokens + completion_tokens,
             prompt_cost=prompt_cost,
             completion_cost=completion_cost,
-            total_cost=prompt_cost + completion_cost
+            total_cost=prompt_cost + completion_cost,
         )

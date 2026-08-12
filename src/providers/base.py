@@ -1,20 +1,20 @@
 """Base provider class for multi-provider AI gateway."""
 
+import random
+import time
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Dict, List, Optional, Set
-import time
-import random
 
 from .models import (
-    ProviderConfig,
-    ModelConfig,
-    ProviderStatus,
-    HealthCheckResult,
-    ProviderMetrics,
     GatewayRequest,
     GatewayResponse,
-    ModelCapability
+    HealthCheckResult,
+    ModelCapability,
+    ModelConfig,
+    ProviderConfig,
+    ProviderMetrics,
+    ProviderStatus,
 )
 
 
@@ -47,9 +47,7 @@ class Provider(ABC):
 
     @abstractmethod
     async def generate(
-        self,
-        request: GatewayRequest,
-        model: Optional[str] = None
+        self, request: GatewayRequest, model: Optional[str] = None
     ) -> GatewayResponse:
         """
         Generate a response for the given request.
@@ -93,10 +91,7 @@ class Provider(ABC):
         """Get all available models for this provider."""
         return self.config.models
 
-    def get_models_with_capability(
-        self,
-        capability: ModelCapability
-    ) -> Dict[str, ModelConfig]:
+    def get_models_with_capability(self, capability: ModelCapability) -> Dict[str, ModelConfig]:
         """
         Get models that have a specific capability.
 
@@ -116,7 +111,7 @@ class Provider(ABC):
         self,
         request: GatewayRequest,
         model: Optional[str] = None,
-        max_retries: Optional[int] = None
+        max_retries: Optional[int] = None,
     ) -> GatewayResponse:
         """
         Generate with automatic retry and circuit breaker.
@@ -137,9 +132,7 @@ class Provider(ABC):
                 self._circuit_open = False
                 self._circuit_failure_count = 0
             else:
-                raise ProviderError(
-                    f"Circuit breaker open for provider {self.config.name}"
-                )
+                raise ProviderError(f"Circuit breaker open for provider {self.config.name}")
 
         max_retries = max_retries or self.config.max_retries
         last_error = None
@@ -170,7 +163,7 @@ class Provider(ABC):
 
                 # Exponential backoff
                 if attempt < max_retries - 1:
-                    backoff = self.config.retry_backoff_multiplier ** attempt
+                    backoff = self.config.retry_backoff_multiplier**attempt
                     backoff = backoff + (random.random() * 0.1)  # Add jitter
                     await self._sleep(backoff)
 
@@ -185,12 +178,7 @@ class Provider(ABC):
         elapsed = (datetime.now() - self._circuit_open_since).total_seconds()
         return elapsed >= self._circuit_timeout_seconds
 
-    def _record_success(
-        self,
-        latency_ms: float,
-        tokens_used: int,
-        cost: float
-    ) -> None:
+    def _record_success(self, latency_ms: float, tokens_used: int, cost: float) -> None:
         """Record a successful request in metrics."""
         self.metrics.total_requests += 1
         self.metrics.successful_requests += 1
@@ -200,10 +188,7 @@ class Provider(ABC):
 
         # Update latency metrics (simplified EWMA)
         alpha = 0.1  # smoothing factor
-        self.metrics.avg_latency_ms = (
-            alpha * latency_ms +
-            (1 - alpha) * self.metrics.avg_latency_ms
-        )
+        self.metrics.avg_latency_ms = alpha * latency_ms + (1 - alpha) * self.metrics.avg_latency_ms
 
     def _record_failure(self) -> None:
         """Record a failed request in metrics."""
@@ -249,7 +234,7 @@ class ProviderError(Exception):
         message: str,
         provider_name: Optional[str] = None,
         is_retryable: bool = True,
-        is_rate_limit: bool = False
+        is_rate_limit: bool = False,
     ):
         """Initialize provider error."""
         super().__init__(message)

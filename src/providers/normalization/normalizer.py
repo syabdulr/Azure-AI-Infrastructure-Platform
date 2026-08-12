@@ -1,23 +1,24 @@
 """Response normalizer for multi-provider AI gateway."""
 
-from typing import Dict, Any, Optional
-from .models import NormalizedResponse, NormalizationResult
+from typing import Any, Dict, List, Optional
+
 from .adapter import ResponseAdapter
 from .azure_openai_adapter import AzureOpenAIAdapter
+from .models import NormalizationResult, NormalizedResponse
 from .openai_adapter import OpenAIAdapter
 
 
 class ResponseNormalizer:
     """Normalizes responses from different providers into a unified format."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize normalizer with all registered adapters."""
         self._adapters: Dict[str, ResponseAdapter] = {
             "azure_openai": AzureOpenAIAdapter(),
-            "openai": OpenAIAdapter()
+            "openai": OpenAIAdapter(),
         }
 
-    def register_adapter(self, provider_name: str, adapter: ResponseAdapter):
+    def register_adapter(self, provider_name: str, adapter: ResponseAdapter) -> None:
         """
         Register a new adapter for a provider.
 
@@ -46,7 +47,7 @@ class ResponseNormalizer:
         model_name: str,
         prompt_tokens: int,
         completion_tokens: int,
-        cost_per_1k: float
+        cost_per_1k: float,
     ) -> NormalizationResult:
         """
         Normalize a provider's raw response.
@@ -75,7 +76,7 @@ class ResponseNormalizer:
                 warnings=[],
                 errors=[f"No adapter registered for provider: {provider_name}"],
                 original_provider=provider_name,
-                normalization_duration_ms=0.0
+                normalization_duration_ms=0.0,
             )
 
         # Normalize using the adapter
@@ -84,7 +85,7 @@ class ResponseNormalizer:
             model_name=model_name,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
-            cost_per_1k=cost_per_1k
+            cost_per_1k=cost_per_1k,
         )
 
     def is_provider_supported(self, provider_name: str) -> bool:
@@ -99,7 +100,7 @@ class ResponseNormalizer:
         """
         return provider_name in self._adapters
 
-    def list_supported_providers(self) -> list[str]:
+    def list_supported_providers(self) -> List[str]:
         """
         Get list of supported providers.
 

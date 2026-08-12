@@ -1,22 +1,18 @@
 """Tests for cache module."""
 
-import pytest
 import asyncio
 from datetime import datetime, timedelta
 
-from src.providers.cache.models import (
-    CacheStatus,
-    CacheEntry,
-    CacheResult,
-    CacheMetrics
-)
+import pytest
+
 from src.providers.cache.key_generator import (
     generate_cache_key,
     generate_cache_key_from_request,
-    hash_string
+    hash_string,
 )
-from src.providers.cache.sqlite_cache import SQLiteCache
 from src.providers.cache.manager import CacheManager, get_cache_manager
+from src.providers.cache.models import CacheEntry, CacheMetrics, CacheResult, CacheStatus
+from src.providers.cache.sqlite_cache import SQLiteCache
 
 
 class TestCacheEntry:
@@ -34,7 +30,7 @@ class TestCacheEntry:
             model="gpt-4",
             prompt_tokens=100,
             completion_tokens=50,
-            cost=0.003
+            cost=0.003,
         )
 
         assert entry.key == "test_key"
@@ -56,7 +52,7 @@ class TestCacheEntry:
             model="gpt-4",
             prompt_tokens=100,
             completion_tokens=50,
-            cost=0.003
+            cost=0.003,
         )
 
         assert expired_entry.is_expired() is True
@@ -72,7 +68,7 @@ class TestCacheEntry:
             model="gpt-4",
             prompt_tokens=100,
             completion_tokens=50,
-            cost=0.003
+            cost=0.003,
         )
 
         assert valid_entry.is_expired() is False
@@ -89,7 +85,7 @@ class TestCacheEntry:
             model="gpt-4",
             prompt_tokens=100,
             completion_tokens=50,
-            cost=0.003
+            cost=0.003,
         )
 
         age = entry.age_seconds()
@@ -161,15 +157,9 @@ class TestCacheKeyGenerator:
 
     def test_generate_cache_key_basic(self):
         """Test basic cache key generation."""
-        messages = [
-            {"role": "user", "content": "Hello"}
-        ]
+        messages = [{"role": "user", "content": "Hello"}]
 
-        key = generate_cache_key(
-            provider="openai",
-            model="gpt-4",
-            messages=messages
-        )
+        key = generate_cache_key(provider="openai", model="gpt-4", messages=messages)
 
         assert "openai:gpt-4:" in key
         assert len(key.split(":")) == 3
@@ -178,21 +168,15 @@ class TestCacheKeyGenerator:
         """Test cache key consistency."""
         messages = [
             {"role": "user", "content": "Hello"},
-            {"role": "assistant", "content": "Hi there"}
+            {"role": "assistant", "content": "Hi there"},
         ]
 
         key1 = generate_cache_key(
-            provider="openai",
-            model="gpt-4",
-            messages=messages,
-            temperature=0.7
+            provider="openai", model="gpt-4", messages=messages, temperature=0.7
         )
 
         key2 = generate_cache_key(
-            provider="openai",
-            model="gpt-4",
-            messages=messages,
-            temperature=0.7
+            provider="openai", model="gpt-4", messages=messages, temperature=0.7
         )
 
         assert key1 == key2
@@ -202,17 +186,11 @@ class TestCacheKeyGenerator:
         messages = [{"role": "user", "content": "Hello"}]
 
         key1 = generate_cache_key(
-            provider="openai",
-            model="gpt-4",
-            messages=messages,
-            temperature=0.7
+            provider="openai", model="gpt-4", messages=messages, temperature=0.7
         )
 
         key2 = generate_cache_key(
-            provider="openai",
-            model="gpt-4",
-            messages=messages,
-            temperature=0.9
+            provider="openai", model="gpt-4", messages=messages, temperature=0.9
         )
 
         assert key1 != key2
@@ -222,14 +200,10 @@ class TestCacheKeyGenerator:
         request = {
             "messages": [{"role": "user", "content": "Test"}],
             "temperature": 0.7,
-            "max_tokens": 1000
+            "max_tokens": 1000,
         }
 
-        key = generate_cache_key_from_request(
-            provider="openai",
-            model="gpt-4",
-            request=request
-        )
+        key = generate_cache_key_from_request(provider="openai", model="gpt-4", request=request)
 
         assert "openai:gpt-4:" in key
 
@@ -415,7 +389,7 @@ async def test_cache_with_metadata():
         "model": "gpt-4",
         "prompt_tokens": 100,
         "completion_tokens": 50,
-        "cost": 0.003
+        "cost": 0.003,
     }
 
     await cache.set(key, value, metadata=metadata)

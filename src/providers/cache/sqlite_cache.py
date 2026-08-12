@@ -1,10 +1,11 @@
 """SQLite cache backend."""
 
-import aiosqlite
 import json
 import os
-from typing import Optional, Any, Dict
 from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple, Type
+
+import aiosqlite
 
 from .base import CacheBackend
 from .models import CacheEntry, CacheResult, CacheStatus
@@ -13,7 +14,9 @@ from .models import CacheEntry, CacheResult, CacheStatus
 class SQLiteCache(CacheBackend):
     """SQLite-based cache backend."""
 
-    def __init__(self, db_path: str = ".cache/gateway.db", default_ttl: int = 3600):
+    _db: Optional[aiosqlite.Connection]
+
+    def __init__(self, db_path: str = ".cache/gateway.db", default_ttl: int = 3600) -> None:
         """
         Initialize SQLite cache.
 
@@ -29,13 +32,13 @@ class SQLiteCache(CacheBackend):
         if db_path != ":memory:":
             os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
 
-    async def _get_db(self):
+    async def _get_db(self) -> aiosqlite.Connection:
         """Get database connection, creating if needed."""
         if self._db is None:
             self._db = await aiosqlite.connect(self.db_path)
         return self._db
 
-    async def _initialize_db(self):
+    async def _initialize_db(self) -> None:
         """Initialize database schema."""
         db = await self._get_db()
 
@@ -79,19 +82,12 @@ class SQLiteCache(CacheBackend):
         try:
             db = await self._get_db()
 
-            cursor = await db.execute(
-                "SELECT * FROM cache_entries WHERE key = ?",
-                (key,)
-            )
+            cursor = await db.execute("SELECT * FROM cache_entries WHERE key = ?", (key,))
             row = await cursor.fetchone()
 
             if not row:
                 self.metrics.record_miss()
-                return CacheResult(
-                    status=CacheStatus.MISS,
-                    entry=None,
-                    key=key
-                )
+                return CacheResult(status=CacheStatus.MISS, entry=None, key=key)
 
             # Parse row into CacheEntry
             entry = self._row_to_entry(row)
@@ -99,40 +95,25 @@ class SQLiteCache(CacheBackend):
             # Check if expired
             if entry.is_expired():
                 # Delete expired entry
-                await db.execute(
-                    "DELETE FROM cache_entries WHERE key = ?",
-                    (key,)
-                )
+                await db.execute("DELETE FROM cache_entries WHERE key = ?", (key,))
                 await db.commit()
 
                 self.metrics.record_miss()
-                return CacheResult(
-                    status=CacheStatus.MISS,
-                    entry=None,
-                    key=key
-                )
+                return CacheResult(status=CacheStatus.MISS, entry=None, key=key)
 
             self.metrics.record_hit()
-            return CacheResult(
-                status=CacheStatus.HIT,
-                entry=entry,
-                key=key
-            )
+            return CacheResult(status=CacheStatus.HIT, entry=entry, key=key)
 
         except Exception as e:
             self.metrics.record_miss()
-            return CacheResult(
-                status=CacheStatus.MISS,
-                entry=None,
-                key=key
-            )
+            return CacheResult(status=CacheStatus.MISS, entry=None, key=key)
 
     async def set(
         self,
         key: str,
         value: Any,
         ttl: Optional[int] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """
         Set a value in cache.
@@ -153,22 +134,25 @@ class SQLiteCache(CacheBackend):
 
             db = await self._get_db()
 
-            await db.execute("""
+            await db.execute(
+                """
                 INSERT OR REPLACE INTO cache_entries
                 (key, value, ttl_seconds, created_at, expires_at, provider, model, prompt_tokens, completion_tokens, cost)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                entry.key,
-                json.dumps(entry.value),
-                entry.ttl_seconds,
-                entry.created_at.isoformat(),
-                entry.expires_at.isoformat(),
-                entry.provider,
-                entry.model,
-                entry.prompt_tokens,
-                entry.completion_tokens,
-                entry.cost
-            ))
+            """,
+                (
+                    entry.key,
+                    json.dumps(entry.value),
+                    entry.ttl_seconds,
+                    entry.created_at.isoformat(),
+                    entry.expires_at.isoformat(),
+                    entry.provider,
+                    entry.model,
+                    entry.prompt_tokens,
+                    entry.completion_tokens,
+                    entry.cost,
+                ),
+            )
 
             await db.commit()
             return True
@@ -189,13 +173,10 @@ class SQLiteCache(CacheBackend):
         try:
             db = await self._get_db()
 
-            cursor = await db.execute(
-                "DELETE FROM cache_entries WHERE key = ?",
-                (key,)
-            )
+            cursor = await db.execute("DELETE FROM cache_entries WHERE key = ?", (key,))
             await db.commit()
 
-            return cursor.rowcount > 0
+            return bool(cursor.rowcount > 0)
 
         except Exception as e:
             return False
@@ -229,7 +210,7 @@ class SQLiteCache(CacheBackend):
 
             cursor = await db.execute("SELECT COUNT(*) FROM cache_entries")
             result = await cursor.fetchone()
-            return result[0] if result else 0
+            return int(result[0]) if result else 0
 
         except Exception as e:
             return 0
@@ -246,20 +227,17 @@ class SQLiteCache(CacheBackend):
 
             now = datetime.now().isoformat()
 
-            cursor = await db.execute(
-                "DELETE FROM cache_entries WHERE expires_at < ?",
-                (now,)
-            )
+            cursor = await db.execute("DELETE FROM cache_entries WHERE expires_at < ?", (now,))
             await db.commit()
 
-            deleted = cursor.rowcount
+            deleted = int(cursor.rowcount)
             self.metrics.record_eviction()
             return deleted
 
         except Exception as e:
             return 0
 
-    def _row_to_entry(self, row) -> CacheEntry:
+    def _row_to_entry(self, row: Any) -> CacheEntry:
         """
         Convert database row to CacheEntry.
 
@@ -279,14 +257,14 @@ class SQLiteCache(CacheBackend):
             model=row[6],
             prompt_tokens=row[7],
             completion_tokens=row[8],
-            cost=row[9]
+            cost=row[9],
         )
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the cache database."""
         await self._initialize_db()
 
-    async def get_entries_by_provider(self, provider: str) -> list[CacheEntry]:
+    async def get_entries_by_provider(self, provider: str) -> List[CacheEntry]:
         """
         Get all entries for a provider.
 
@@ -299,10 +277,7 @@ class SQLiteCache(CacheBackend):
         try:
             db = await self._get_db()
 
-            cursor = await db.execute(
-                "SELECT * FROM cache_entries WHERE provider = ?",
-                (provider,)
-            )
+            cursor = await db.execute("SELECT * FROM cache_entries WHERE provider = ?", (provider,))
             rows = await cursor.fetchall()
 
             return [self._row_to_entry(row) for row in rows]
@@ -310,7 +285,7 @@ class SQLiteCache(CacheBackend):
         except Exception as e:
             return []
 
-    async def get_entries_by_model(self, provider: str, model: str) -> list[CacheEntry]:
+    async def get_entries_by_model(self, provider: str, model: str) -> List[CacheEntry]:
         """
         Get all entries for a provider and model.
 
@@ -325,8 +300,7 @@ class SQLiteCache(CacheBackend):
             db = await self._get_db()
 
             cursor = await db.execute(
-                "SELECT * FROM cache_entries WHERE provider = ? AND model = ?",
-                (provider, model)
+                "SELECT * FROM cache_entries WHERE provider = ? AND model = ?", (provider, model)
             )
             rows = await cursor.fetchall()
 
@@ -335,16 +309,18 @@ class SQLiteCache(CacheBackend):
         except Exception as e:
             return []
 
-    async def close(self):
+    async def close(self) -> None:
         """Close the database connection."""
         if self._db is not None:
             await self._db.close()
             self._db = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "SQLiteCache":
         """Async context manager entry."""
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: Any
+    ) -> None:
         """Async context manager exit."""
         await self.close()

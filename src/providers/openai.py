@@ -3,17 +3,18 @@
 import os
 import time
 from typing import Optional
+
 import openai
 
 from .base import Provider, ProviderError
 from .models import (
-    ProviderConfig,
-    ModelConfig,
-    ProviderStatus,
-    HealthCheckResult,
     GatewayRequest,
     GatewayResponse,
-    ModelCapability
+    HealthCheckResult,
+    ModelCapability,
+    ModelConfig,
+    ProviderConfig,
+    ProviderStatus,
 )
 
 
@@ -34,15 +35,10 @@ class OpenAIProvider(Provider):
         super().__init__(config)
 
         # Initialize OpenAI client
-        self.client = openai.OpenAI(
-            api_key=config.api_key,
-            timeout=config.timeout
-        )
+        self.client = openai.OpenAI(api_key=config.api_key, timeout=config.timeout)
 
     async def generate(
-        self,
-        request: GatewayRequest,
-        model: Optional[str] = None
+        self, request: GatewayRequest, model: Optional[str] = None
     ) -> GatewayResponse:
         """
         Generate a response using OpenAI.
@@ -61,9 +57,7 @@ class OpenAIProvider(Provider):
         model_config = self.get_model(model_name)
 
         if not model_config:
-            raise ProviderError(
-                f"Model {model_name} not found in provider {self.config.name}"
-            )
+            raise ProviderError(f"Model {model_name} not found in provider {self.config.name}")
 
         start_time = time.time()
         request_id = request.request_id or f"{self.config.name}_{int(time.time())}"
@@ -72,12 +66,10 @@ class OpenAIProvider(Provider):
             # Make the API call
             completion = self.client.chat.completions.create(
                 model=model_name,
-                messages=[
-                    {"role": "user", "content": request.prompt}
-                ],
+                messages=[{"role": "user", "content": request.prompt}],
                 max_tokens=request.max_tokens or model_config.max_tokens,
                 temperature=request.temperature,
-                timeout=self.config.timeout
+                timeout=self.config.timeout,
             )
 
             latency_ms = (time.time() - start_time) * 1000
@@ -100,14 +92,14 @@ class OpenAIProvider(Provider):
                 metadata={
                     "finish_reason": completion.choices[0].finish_reason,
                     "prompt_tokens": completion.usage.prompt_tokens,
-                    "completion_tokens": completion.usage.completion_tokens
-                }
+                    "completion_tokens": completion.usage.completion_tokens,
+                },
             )
 
         except openai.APIError as e:
             # Handle different API error types
-            if hasattr(e, 'status_code'):
-                status_code = getattr(e, 'status_code')
+            if hasattr(e, "status_code"):
+                status_code = getattr(e, "status_code")
                 is_retryable = status_code not in [400, 401, 403, 404]
                 is_rate_limit = status_code == 429
             else:
@@ -118,14 +110,12 @@ class OpenAIProvider(Provider):
                 f"OpenAI API error: {e}",
                 provider_name=self.config.name,
                 is_retryable=is_retryable,
-                is_rate_limit=is_rate_limit
+                is_rate_limit=is_rate_limit,
             )
 
         except openai.APITimeoutError as e:
             raise ProviderError(
-                f"OpenAI timeout: {e}",
-                provider_name=self.config.name,
-                is_retryable=True
+                f"OpenAI timeout: {e}", provider_name=self.config.name, is_retryable=True
             )
 
         except openai.RateLimitError as e:
@@ -133,21 +123,19 @@ class OpenAIProvider(Provider):
                 f"OpenAI rate limit: {e}",
                 provider_name=self.config.name,
                 is_retryable=True,
-                is_rate_limit=True
+                is_rate_limit=True,
             )
 
         except openai.APIConnectionError as e:
             raise ProviderError(
-                f"OpenAI connection error: {e}",
-                provider_name=self.config.name,
-                is_retryable=True
+                f"OpenAI connection error: {e}", provider_name=self.config.name, is_retryable=True
             )
 
         except Exception as e:
             raise ProviderError(
                 f"Unexpected error from OpenAI: {e}",
                 provider_name=self.config.name,
-                is_retryable=False
+                is_retryable=False,
             )
 
     async def health_check(self) -> HealthCheckResult:
@@ -167,7 +155,7 @@ class OpenAIProvider(Provider):
                 model=list(self.config.models.keys())[0],
                 messages=[{"role": "user", "content": "Hi"}],
                 max_tokens=1,
-                timeout=5
+                timeout=5,
             )
 
             latency_ms = (time.time() - start_time) * 1000
@@ -185,7 +173,7 @@ class OpenAIProvider(Provider):
                 status=status,
                 timestamp=datetime.now(),
                 latency_ms=latency_ms,
-                success_rate=self.get_success_rate()
+                success_rate=self.get_success_rate(),
             )
 
         except openai.RateLimitError:
@@ -196,7 +184,7 @@ class OpenAIProvider(Provider):
                 timestamp=datetime.now(),
                 latency_ms=latency_ms,
                 error="Rate limited",
-                success_rate=self.get_success_rate()
+                success_rate=self.get_success_rate(),
             )
 
         except Exception as e:
@@ -207,7 +195,7 @@ class OpenAIProvider(Provider):
                 timestamp=datetime.now(),
                 latency_ms=latency_ms,
                 error=str(e),
-                success_rate=self.get_success_rate()
+                success_rate=self.get_success_rate(),
             )
 
     def get_model(self, name: str) -> Optional[ModelConfig]:
@@ -224,9 +212,7 @@ class OpenAIProvider(Provider):
 
 
 def create_openai_provider(
-    name: str,
-    api_key: Optional[str] = None,
-    models: Optional[dict] = None
+    name: str, api_key: Optional[str] = None, models: Optional[dict] = None
 ) -> OpenAIProvider:
     """
     Factory function to create OpenAI provider with default models.
@@ -255,10 +241,10 @@ def create_openai_provider(
                     ModelCapability.CHAT,
                     ModelCapability.REASONING,
                     ModelCapability.CODE,
-                    ModelCapability.ANALYSIS
+                    ModelCapability.ANALYSIS,
                 },
                 context_window=8192,
-                supports_function_calling=True
+                supports_function_calling=True,
             ),
             "gpt-4-turbo": ModelConfig(
                 name="gpt-4-turbo",
@@ -269,10 +255,10 @@ def create_openai_provider(
                     ModelCapability.REASONING,
                     ModelCapability.CODE,
                     ModelCapability.ANALYSIS,
-                    ModelCapability.MULTIMODAL
+                    ModelCapability.MULTIMODAL,
                 },
                 context_window=128000,
-                supports_function_calling=True
+                supports_function_calling=True,
             ),
             "gpt-4o": ModelConfig(
                 name="gpt-4o",
@@ -283,29 +269,21 @@ def create_openai_provider(
                     ModelCapability.REASONING,
                     ModelCapability.CODE,
                     ModelCapability.ANALYSIS,
-                    ModelCapability.MULTIMODAL
+                    ModelCapability.MULTIMODAL,
                 },
                 context_window=128000,
-                supports_function_calling=True
+                supports_function_calling=True,
             ),
             "gpt-35-turbo": ModelConfig(
                 name="gpt-35-turbo",
                 cost_per_1k_tokens=0.002,
                 max_tokens=4096,
-                capabilities={
-                    ModelCapability.CHAT,
-                    ModelCapability.SIMPLE_REASONING
-                },
+                capabilities={ModelCapability.CHAT, ModelCapability.SIMPLE_REASONING},
                 context_window=4096,
-                supports_function_calling=True
-            )
+                supports_function_calling=True,
+            ),
         }
 
-    config = ProviderConfig(
-        name=name,
-        provider_type="openai",
-        api_key=api_key,
-        models=models
-    )
+    config = ProviderConfig(name=name, provider_type="openai", api_key=api_key, models=models)
 
     return OpenAIProvider(config)
