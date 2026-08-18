@@ -6,60 +6,110 @@
 ![Docker](https://img.shields.io/badge/docker-supported-blue)
 ![CI/CD](https://img.shields.io/badge/cicd-github--actions-green)
 
-## 🎯 **Production-Ready Azure AI Platform for Utilities Companies**
+## 🎯 **Production-Ready Azure AI Platform with Built-In Safety & Governance**
 
-Deploy and operationalize AI workloads at scale. A unified RESTful API integrating Azure OpenAI (GPT-4), Azure Cognitive Search, and Azure Storage with enterprise-grade monitoring, security, and guardrails.
-
-**Perfect for:** Utilities • Healthcare • Finance • Enterprise AI deployments
+A unified RESTful API integrating Azure OpenAI (GPT-4), Azure Cognitive Search, and Azure Storage — with guardrails, budget enforcement, quality evaluation, and audit logging built into the request path itself, not bolted on after.
 
 ---
 
-## ⚡ **UTILITIES USE CASE**
+## **Value Proposition**
 
-### **🔥 4 Reference Workflows for the Utilities Sector**
+| Feature | What It Means |
+|---------|---------------|
+| **30+ API Endpoints** | Complete AI platform ready for integration |
+| **Agentic Safety & Governance** | PII detection, prompt injection defense, budget enforcement, and audit trail on every request — see below |
+| **6-Layer Security** | Enterprise-grade security (network, auth, API, data, application, monitoring) |
+| **Real-Time Monitoring** | Prometheus + Grafana dashboards for production observability |
+| **Production Deployment** | 4 deployment strategies (Container Apps, App Service, Docker, AKS) |
+| **Semantic Search** | Azure Cognitive Search for RAG (Retrieval-Augmented Generation) |
+| **Reference Workflows** | 4 end-to-end demo workflows built on the platform (utilities vertical) |
 
-Demo-mode reference implementations showing the intended shape of a utilities AI deployment. Anomaly-detection, comparison, and trend logic run for real against synthetic data today; extraction steps that depend on managed Azure AI services (e.g. Form Recognizer for bill OCR) are architected but not yet implemented — see [Utilities Use Case](docs/UTILITIES_USE_CASE.md) for current scope per workflow.
+---
 
-| Use Case | Problem | AI Solution | Illustrative Business Impact* |
-|----------|---------|-------------|-----------------|
-| **Bill Processing** | 80% manual time, 15% error rate | Automated extraction, validation, anomaly detection | **80% time saved, 95% error reduction** |
-| **Regulation Search** | 4 hours per query, 75% accuracy | RAG-based semantic search, compliance checklists | **70% time saved, 90% accuracy** |
-| **Support Automation** | 60-min response, 40% first-contact | AI classification, routing, response generation | **60% faster, 45% better resolution** |
-| **Usage Analytics** | 25% energy waste, no detection | Trend analysis, anomaly detection, optimization | **25% waste reduced, 90% detection accuracy** |
+## 🛡️ **Agentic AI Safety & Governance**
 
-*Figures are industry-benchmark estimates used to size the use case, not measured results — this hasn't been run against a production utility's real data.
+Every request through this platform passes through the same governance path, whether it originates from a person, an FXPE agent, or an automated pipeline. Nothing reaches a model — and nothing reaches the caller — without going through it.
 
-### **💰 Illustrative ROI: $2.5M - $5M Annual Savings**
-*(Back-of-envelope estimate for a mid-size utility with 100K customers, based on the benchmarks above — not a measured outcome)*
+```mermaid
+flowchart LR
+    Client([Client / Agent Request]) --> Guard1[Input Guardrails<br/>PII detection · prompt-injection<br/>detection · content filter]
+    Guard1 -->|blocked| Deny([Request Blocked])
+    Guard1 -->|clean| Budget{Budget Enforcement<br/>per-provider daily/monthly limits}
+    Budget -->|over budget| Reroute[Auto-route to<br/>fallback provider]
+    Budget -->|within budget| Route[Routing Engine<br/>9 operators · 4 priority levels]
+    Reroute --> LLMRAG
+    Route --> LLMRAG[LLM / RAG<br/>Azure OpenAI + Cognitive Search]
+    LLMRAG --> Eval[Golden-Set Evaluation<br/>quality + regression check]
+    Eval --> Guard2[Output Guardrails<br/>PII redaction · safety filter]
+    Guard2 -->|violation| Escalate([Human Escalation])
+    Guard2 -->|clean| Response([Response Returned])
 
-### **🚀 Try It Now - Interactive Demo**
-```bash
-git clone https://github.com/syabdulr/Azure-AI-Infrastructure-Platform.git
-cd Azure-AI-Infrastructure-Platform
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn src.main:app --reload
+    Guard1 -.-> Audit[(Audit Log)]
+    Guard2 -.-> Audit
+    Budget -.-> Metrics[(Prometheus Metrics)]
+    Eval -.-> Metrics
+
+    style Deny fill:#5a1f1f,stroke:#c0392b,color:#fff
+    style Escalate fill:#5a4a1f,stroke:#d4a017,color:#fff
+    style Response fill:#1f5a2e,stroke:#27ae60,color:#fff
 ```
 
-**Demo Endpoints:**
-- **Bill Processing:** `GET /utilities/bills/demo`
-- **Regulation Search:** `GET /utilities/regulations/search?query=disconnection`
-- **Support Automation:** `POST /utilities/support/tickets`
-- **Usage Analytics:** `GET /utilities/analytics/anomalies?customer_id=ACC-12345`
+| Control | What it does | Where it lives |
+|---|---|---|
+| **PII detection & redaction** | Flags/redacts SSNs, emails, phone numbers, credit cards in both directions | `src/guardrails/`, `src/providers/guardrails/` |
+| **Prompt injection defense** | 10 known attack patterns checked on every input | `src/providers/guardrails/detector.py` |
+| **Harmful content filtering** | 13-keyword filter with block/redact modes | `src/guardrails/output_filter.py` |
+| **Budget enforcement** | Per-provider daily/monthly spend limits, alerts, auto-routing on breach | `src/providers/budget/` |
+| **Rate limiting** | Per-user, per-endpoint request caps | `src/guardrails/rate_limiter.py` |
+| **Golden-set evaluation** | Regression detection between prompt versions before they ship | `src/providers/evaluation/` |
+| **Audit trail** | Every guardrail decision and violation logged for review | `src/providers/guardrails/audit.py` |
+| **Observability** | Prometheus metrics on requests, cost, latency, and violations | `src/monitoring/`, `src/providers/observability/` |
 
-**Access:** http://localhost:8000/docs → **Utilities** section
+**Why this matters for agentic systems specifically:** an autonomous agent — unlike a human using a chat UI — can issue thousands of requests per hour with no one reviewing each one in real time. The failure mode isn't "a person types something bad," it's "an agent loop does something bad at scale before anyone notices." Budget enforcement bounds the financial blast radius; guardrails bound the content blast radius; the audit trail makes both reviewable after the fact. This is the same governance shape used to give FXPE's own agent fleet isolated execution boundaries.
 
-### **📘 Complete Documentation:**
-- [**Utilities Use Case (17.9KB)**](docs/UTILITIES_USE_CASE.md) - Detailed walkthrough, business outcomes, technical implementation
-- [Architecture Guide](docs/ARCHITECTURE.md) - System design, security, scalability
-- [Deployment Guide](docs/DEPLOYMENT.md) - Azure deployment strategies
-- [Quick Start](docs/QUICK_START.md) - Fast-track deployment
-- [Documentation Index](docs/README.md) - Complete documentation overview
+**Honesty note:** guardrail detection here is deterministic (regex/keyword/pattern-based), not LLM-judged — that's a deliberate choice for speed and predictability at the gateway layer, not a limitation. It's not a substitute for a policy/legal review of agent behavior at scale.
 
 ---
 
-## 🚀 **TRY IT NOW** (No Azure Required)
+## ⚡ **Reference Workflows** (Utilities Vertical)
+
+Demo-mode reference implementations showing the platform applied to a concrete vertical. Anomaly-detection, comparison, and trend logic run for real against synthetic data today; extraction steps that depend on managed Azure AI services (e.g. Form Recognizer for bill OCR) are architected but not yet implemented — see [Reference Workflows Detail](docs/UTILITIES_USE_CASE.md) for current scope per workflow.
+
+### **1. Bill Processing**
+- Synthetic demo bill generation, validation, and anomaly detection (rule-based thresholds) — working today against demo data
+- Automated PDF/Image extraction via Azure Form Recognizer — architected, not yet implemented (`extract_bill_data()` raises `NotImplementedError` outside demo mode, pending Form Recognizer credentials)
+- Usage trend analysis and cost optimization recommendations
+
+### **2. Regulation Search**
+- RAG-based semantic search (Azure Cognitive Search)
+- Compliance requirement extraction, AI-powered policy interpretation
+- Compliance checklist generation
+
+### **3. Support Automation**
+- Automatic ticket classification (billing, outage, technical)
+- Smart routing and priority assignment
+- AI-generated response suggestions, sentiment analysis and escalation
+
+### **4. Usage Analytics**
+- Usage trend analysis and anomaly detection (demo dataset includes two seeded anomaly days used to validate the detection logic)
+- Optimization recommendations, peer benchmarking, predictive insights
+
+**Try it:**
+```bash
+uvicorn src.main:app --reload
+curl http://localhost:8000/utilities/bills/demo
+curl "http://localhost:8000/utilities/regulations/search?query=disconnection"
+curl "http://localhost:8000/utilities/analytics/anomalies?customer_id=ACC-12345"
+```
+No Azure credentials required — the utilities module runs entirely against synthetic demo data. Core endpoints (`/chat`, `/rag`, `/guardrails`) call real Azure OpenAI / Cognitive Search clients and require real credentials.
+
+**📘 [Full Reference Workflow Documentation](docs/UTILITIES_USE_CASE.md)**
+
+---
+
+## 🚀 **QUICK START (5 Minutes)**
+
+### Option 1: Demo Mode (No Azure Required)
 
 ```bash
 git clone https://github.com/syabdulr/Azure-AI-Infrastructure-Platform.git
@@ -72,97 +122,26 @@ uvicorn src.main:app --reload
 
 **Access:** http://localhost:8000/docs
 
----
-
-## ** Value Proposition **
-
-| Feature | What It Means |
-|---------|---------------|
-| **30+ API Endpoints** | Complete AI platform ready for integration |
-| **6-Layer Security** | Enterprise-grade security (network, auth, API, data, application, monitoring) |
-| **Real-Time Monitoring** | Prometheus + Grafana dashboards for production observability |
-| **Production Deployment** | 4 deployment strategies (Container Apps, App Service, Docker, AKS) |
-| **Guardrails Built-In** | PII detection, content filtering, rate limiting out of the box |
-| **Semantic Search** | Azure Cognitive Search for RAG (Retrieval-Augmented Generation) |
-| **Utilities-Specific** | 4 reference utilities workflows with illustrative, benchmark-based business outcomes |
-
----
-
-## ⚡ **QUICK START (5 Minutes)**
-
-### Option 1: Demo Mode (Utilities Workflows Only, No Azure Required)
-
-```bash
-uvicorn src.main:app --reload
-```
-
-The **Utilities module** (`/utilities/*` — bill processing, regulation search, support automation, usage analytics) runs against synthetic demo data by default and needs no Azure credentials. Core endpoints (`/chat`, `/rag`, `/guardrails`) call real Azure OpenAI / Cognitive Search clients and require real credentials — there's no demo-mode path for those yet.
-
 ### Option 2: With Azure Credentials
 
 ```bash
-# Copy environment template
 cp .env.example .env
-
 # Add your Azure credentials (see .env.example for details)
-# AZURE_OPENAI_ENDPOINT=...
-# AZURE_OPENAI_API_KEY=...
-# AZURE_SEARCH_ENDPOINT=...
-# AZURE_SEARCH_API_KEY=...
-
-# Run application
 uvicorn src.main:app --reload
 ```
 
 ### Verify It Works
 
 ```bash
-# Health check
 curl http://localhost:8000/health
-
-# View metrics
 curl http://localhost:8000/observability/metrics
-
-# Try utilities demo
 curl http://localhost:8000/utilities/bills/demo
-
-# Open Swagger UI
 open http://localhost:8000/docs
 ```
 
 ---
 
 ## 🎨 **FEATURES OVERVIEW**
-
-### **Utilities Workflows (4 Production-Ready)**
-
-#### **1. Bill Processing**
-- Synthetic demo bill generation, validation, and anomaly detection (rule-based thresholds) — working today against demo data
-- Automated PDF/Image extraction via Azure Form Recognizer — architected, not yet implemented (`extract_bill_data()` raises `NotImplementedError` outside demo mode, pending Form Recognizer credentials)
-- Usage trend analysis
-- Cost optimization recommendations
-- *Illustrative target: 80% manual time saved, 95% fewer errors — benchmark estimate, not a measured result*
-
-#### **2. Regulation Search**
-- RAG-based semantic search (Azure Cognitive Search)
-- Compliance requirement extraction
-- AI-powered policy interpretation
-- Compliance checklist generation
-- *Illustrative target: 70% less research time, 90% accuracy — benchmark estimate, not a measured result*
-
-#### **3. Support Automation**
-- Automatic ticket classification (billing, outage, technical)
-- Smart routing and priority assignment
-- AI-generated response suggestions
-- Sentiment analysis and escalation
-- *Illustrative target: 60% faster response, 45% better resolution — benchmark estimate, not a measured result*
-
-#### **4. Usage Analytics**
-- Usage trend analysis and anomaly detection (demo dataset includes two seeded anomaly days used to validate the detection logic)
-- Optimization recommendations
-- Peer benchmarking
-- Predictive insights
-- *Illustrative target: 25% less energy waste, 90% detection accuracy — benchmark estimate against seeded demo data, not a measured production result*
 
 ### AI & LLM
 - ✅ Azure OpenAI Integration (GPT-4, Embeddings)
@@ -180,7 +159,7 @@ open http://localhost:8000/docs
 
 ### Prompt Evaluation & Responsible AI
 - ✅ **Golden Sets Evaluation** — Define expected outputs, automated quality scoring (exact match, keyword containment, term-frequency cosine similarity with Jaccard fallback for short strings, length ratio), regression detection between runs
-- ✅ **Responsible AI Guardrails** — PII detection (SSN, email, phone, credit card), harmful content filtering (13 keywords), prompt injection detection (10 attack patterns), block/redact modes, human escalation, full audit trail
+- ✅ **Responsible AI Guardrails** — PII detection (SSN, email, phone, credit card), harmful content filtering (13 keywords), prompt injection detection (10 attack patterns), block/redact modes, human escalation, full audit trail — see [Agentic AI Safety & Governance](#-agentic-ai-safety--governance) above
 
 ### **RAG (Retrieval-Augmented Generation)**
 - ✅ Azure Cognitive Search integration
@@ -304,7 +283,7 @@ Client → API Gateway → Guardrails → LLM/RAG → Output Filter → Client
 
 ## 📊 **API ENDPOINTS**
 
-### Utilities Module (17 Endpoints) 🔥
+### Utilities Module (17 Endpoints)
 
 #### Bill Processing
 - `GET /utilities/bills/demo` - Generate demo bill
@@ -373,19 +352,14 @@ Client → API Gateway → Guardrails → LLM/RAG → Output Filter → Client
 
 ### Test Results
 - **Unit Tests:** 372/372 passing ✅
-- **CI/CD:** GitHub Actions (flake8, black, isort, mypy, pytest) ✅
+- **CI/CD:** GitHub Actions (flake8, black, isort, mypy, pytest, Docker build, Trivy scan, staging deploy) ✅
 
 **Note:** Integration tests (API routes, LLM, RAG, Guardrails) would add 40-50% coverage but require Azure service credentials. Current coverage represents comprehensive unit testing of core components without external dependencies.
 
 ### Run Tests
 ```bash
-# Unit tests
 pytest tests/unit/ -v
-
-# With coverage
 pytest tests/unit/ --cov=src --cov-report=html
-
-# Open coverage report
 open htmlcov/index.html
 ```
 
@@ -395,7 +369,7 @@ open htmlcov/index.html
 
 | Document | Description | Size |
 |----------|-------------|------|
-| [Utilities Use Case](docs/UTILITIES_USE_CASE.md) | Utilities workflows, business outcomes, technical implementation | 17.9KB |
+| [Reference Workflows Detail](docs/UTILITIES_USE_CASE.md) | Utilities workflows, technical implementation | 17.9KB |
 | [Architecture Guide](docs/ARCHITECTURE.md) | System design, security, scalability | 40KB |
 | [Deployment Guide](docs/DEPLOYMENT.md) | Azure deployment strategies | 15KB |
 | [Quick Start](docs/QUICK_START.md) | Fast-track deployment | 6KB |
@@ -415,12 +389,7 @@ open htmlcov/index.html
   - Application: PII detection, content filtering, audit logging
   - Monitoring: Security monitoring, threat detection, incident response
 
-- **Guardrails**
-  - PII detection and redaction (emails, phones, SSNs)
-  - Content safety filtering
-  - Input/output validation
-  - Rate limiting (per user, per endpoint)
-  - Comprehensive audit logging
+- **Guardrails** — see [Agentic AI Safety & Governance](#-agentic-ai-safety--governance) above for the full request-path breakdown
 
 - **Secrets Management**
   - Azure Key Vault integration
@@ -440,7 +409,7 @@ azure-ai-infra-platform/
 │   ├── guardrails/       # Platform-level input/output filtering for /chat, /rag — separate implementation from providers/guardrails below
 │   ├── monitoring/       # Metrics, logging, alerts
 │   ├── config/           # Configuration management
-│   ├── utilities/        # Utilities workflows
+│   ├── utilities/        # Reference workflows (utilities vertical)
 │   ├── providers/        # Multi-provider gateway engine
 │   │   ├── normalization/  # Unified response format
 │   │   ├── cache/          # SQLite multi-provider caching
@@ -475,28 +444,19 @@ azure-ai-infra-platform/
 
 ## 💼 **PERFECT FOR**
 
-- **Utilities Companies** - Deploy AI for customer support, document processing, compliance
-- **Healthcare** - Secure AI with PII detection and compliance
-- **Finance** - Enterprise-grade security and audit logging
-- **Enterprise AI** - Production deployment at scale with full observability
+- **Enterprise AI** — Production deployment at scale with guardrails, budget control, and full observability built in
+- **Utilities, Healthcare, Finance** — Any domain that needs PII detection, audit logging, and compliance-grade traceability around AI workloads
+- **Multi-Agent Systems** — A governed gateway for a fleet of agents that need bounded spend and reviewable behavior, not just a model endpoint
 
 ---
 
-## 💰 **COST ESTIMATES**
-
-### Operating Costs (Monthly)
+## 💰 **OPERATING COSTS**
 
 | Scale | Azure OpenAI | Cognitive Search | Storage | Container Apps | Total |
 |-------|--------------|------------------|---------|----------------|-------|
 | Small | $50-100 | $25 | $5 | $30 | **$110-135** |
 | Medium | $200-500 | $75 | $15 | $100 | **$390-690** |
 | Large | $500-2,000 | $200 | $50 | $300 | **$1,050-2,550** |
-
-### ROI for Utilities
-- **Implementation Cost:** $50K - $100K (one-time)
-- **Annual Savings:** $2.5M - $5M (for 100K customers)
-- **ROI:** 2,500% - 10,000%
-- **Payback Period:** 1-3 months
 
 ---
 
@@ -525,7 +485,7 @@ GitHub: [syabdulr](https://github.com/syabdulr)
 Email: syabdulr6@gmail.com  
 Role: AI Platform Engineer
 
-**Focus:** Deploying and operationalizing AI workloads on Azure at scale for utilities companies
+**Focus:** Deploying and operationalizing AI workloads on Azure at scale, with safety and governance built into the gateway layer
 
 ---
 
