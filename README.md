@@ -16,17 +16,21 @@ Deploy and operationalize AI workloads at scale. A unified RESTful API integrati
 
 ## ⚡ **UTILITIES USE CASE**
 
-### **🔥 4 Production-Ready Utilities Workflows**
+### **🔥 4 Reference Workflows for the Utilities Sector**
 
-| Use Case | Problem | AI Solution | Business Impact |
+Demo-mode reference implementations showing the intended shape of a utilities AI deployment. Anomaly-detection, comparison, and trend logic run for real against synthetic data today; extraction steps that depend on managed Azure AI services (e.g. Form Recognizer for bill OCR) are architected but not yet implemented — see [Utilities Use Case](docs/UTILITIES_USE_CASE.md) for current scope per workflow.
+
+| Use Case | Problem | AI Solution | Illustrative Business Impact* |
 |----------|---------|-------------|-----------------|
 | **Bill Processing** | 80% manual time, 15% error rate | Automated extraction, validation, anomaly detection | **80% time saved, 95% error reduction** |
 | **Regulation Search** | 4 hours per query, 75% accuracy | RAG-based semantic search, compliance checklists | **70% time saved, 90% accuracy** |
 | **Support Automation** | 60-min response, 40% first-contact | AI classification, routing, response generation | **60% faster, 45% better resolution** |
 | **Usage Analytics** | 25% energy waste, no detection | Trend analysis, anomaly detection, optimization | **25% waste reduced, 90% detection accuracy** |
 
-### **💰 Quantified ROI: $2.5M - $5M Annual Savings**
-*(For mid-size utility with 100K customers)*
+*Figures are industry-benchmark estimates used to size the use case, not measured results — this hasn't been run against a production utility's real data.
+
+### **💰 Illustrative ROI: $2.5M - $5M Annual Savings**
+*(Back-of-envelope estimate for a mid-size utility with 100K customers, based on the benchmarks above — not a measured outcome)*
 
 ### **🚀 Try It Now - Interactive Demo**
 ```bash
@@ -80,18 +84,19 @@ uvicorn src.main:app --reload
 | **Production Deployment** | 4 deployment strategies (Container Apps, App Service, Docker, AKS) |
 | **Guardrails Built-In** | PII detection, content filtering, rate limiting out of the box |
 | **Semantic Search** | Azure Cognitive Search for RAG (Retrieval-Augmented Generation) |
-| **Utilities-Specific** | 4 production-ready utilities workflows with quantified business outcomes |
+| **Utilities-Specific** | 4 reference utilities workflows with illustrative, benchmark-based business outcomes |
 
 ---
 
 ## ⚡ **QUICK START (5 Minutes)**
 
-### Option 1: Demo Mode (No Azure Required)
+### Option 1: Demo Mode (Utilities Workflows Only, No Azure Required)
 
 ```bash
-export DEMO_MODE=true
 uvicorn src.main:app --reload
 ```
+
+The **Utilities module** (`/utilities/*` — bill processing, regulation search, support automation, usage analytics) runs against synthetic demo data by default and needs no Azure credentials. Core endpoints (`/chat`, `/rag`, `/guardrails`) call real Azure OpenAI / Cognitive Search clients and require real credentials — there's no demo-mode path for those yet.
 
 ### Option 2: With Azure Credentials
 
@@ -132,32 +137,32 @@ open http://localhost:8000/docs
 ### **Utilities Workflows (4 Production-Ready)**
 
 #### **1. Bill Processing**
-- Automated PDF/Image extraction (Azure Form Recognizer)
-- Data validation and anomaly detection
+- Synthetic demo bill generation, validation, and anomaly detection (rule-based thresholds) — working today against demo data
+- Automated PDF/Image extraction via Azure Form Recognizer — architected, not yet implemented (`extract_bill_data()` raises `NotImplementedError` outside demo mode, pending Form Recognizer credentials)
 - Usage trend analysis
 - Cost optimization recommendations
-- **Save 80% manual time, reduce errors by 95%**
+- *Illustrative target: 80% manual time saved, 95% fewer errors — benchmark estimate, not a measured result*
 
 #### **2. Regulation Search**
 - RAG-based semantic search (Azure Cognitive Search)
 - Compliance requirement extraction
 - AI-powered policy interpretation
 - Compliance checklist generation
-- **Reduce research time by 70%, improve accuracy by 90%**
+- *Illustrative target: 70% less research time, 90% accuracy — benchmark estimate, not a measured result*
 
 #### **3. Support Automation**
 - Automatic ticket classification (billing, outage, technical)
 - Smart routing and priority assignment
 - AI-generated response suggestions
 - Sentiment analysis and escalation
-- **Reduce response time by 60%, improve resolution by 45%**
+- *Illustrative target: 60% faster response, 45% better resolution — benchmark estimate, not a measured result*
 
 #### **4. Usage Analytics**
-- Usage trend analysis and anomaly detection
+- Usage trend analysis and anomaly detection (demo dataset includes two seeded anomaly days used to validate the detection logic)
 - Optimization recommendations
 - Peer benchmarking
 - Predictive insights
-- **Reduce energy waste by 25%, detect anomalies with 90% accuracy**
+- *Illustrative target: 25% less energy waste, 90% detection accuracy — benchmark estimate against seeded demo data, not a measured production result*
 
 ### AI & LLM
 - ✅ Azure OpenAI Integration (GPT-4, Embeddings)
@@ -166,16 +171,16 @@ open http://localhost:8000/docs
 - ✅ Automated response quality evaluation
 
 ### Multi-Provider Gateway Engine
-- ✅ **Response Normalization** — Unified response format across all providers
-- ✅ **Multi-Provider Caching** — SQLite-backed cache for 30-40% cost reduction
-- ✅ **Budget Enforcement** — Per-provider daily/monthly limits with alerts and auto-routing
+- ✅ **Response Normalization** — Adapter pattern for a unified response format; Azure OpenAI and OpenAI adapters implemented today, designed to extend to additional providers via `register_adapter()`
+- ✅ **Multi-Provider Caching** — SQLite-backed response cache with TTL eviction and hit/miss metrics; 30-40% cost reduction is an industry-benchmark estimate, not yet measured against production traffic
+- ✅ **Budget Enforcement** — Per-provider daily/monthly limits with alerts and auto-routing (currently in-process state; not yet coordinated across autoscaled replicas)
 - ✅ **Custom Routing Rules** — 9 operators, 4 priority levels, dynamic rule engine with catch-all fallbacks
 - ✅ **A/B Testing Framework** — MD5 deterministic assignment, traffic splitting, per-variant metrics
-- ✅ **Observability** — GatewayMetrics, HealthSnapshot, Prometheus export with per-provider breakdown
+- ✅ **Observability** — GatewayMetrics, HealthSnapshot, hand-rolled Prometheus text-exposition export with per-provider breakdown
 
 ### Prompt Evaluation & Responsible AI
-- ✅ **Golden Sets Evaluation** — Define expected outputs, automated quality scoring (exact match, keyword containment, TF-IDF cosine similarity, length ratio), regression detection between runs
-- ✅ **Responsible AI Guardrails** — PII detection (SSN, email, phone, credit card), harmful content filtering (14 keywords), prompt injection detection (10 attack patterns), block/redact modes, human escalation, full audit trail
+- ✅ **Golden Sets Evaluation** — Define expected outputs, automated quality scoring (exact match, keyword containment, term-frequency cosine similarity with Jaccard fallback for short strings, length ratio), regression detection between runs
+- ✅ **Responsible AI Guardrails** — PII detection (SSN, email, phone, credit card), harmful content filtering (13 keywords), prompt injection detection (10 attack patterns), block/redact modes, human escalation, full audit trail
 
 ### **RAG (Retrieval-Augmented Generation)**
 - ✅ Azure Cognitive Search integration
@@ -192,7 +197,7 @@ open http://localhost:8000/docs
 
 ### **Monitoring & Observability**
 - ✅ Prometheus metrics (counters, gauges, histograms)
-- ✅ Grafana dashboards (API performance, AI usage, system health)
+- ✅ Grafana datasource + dashboard-provisioning configured (auto-loads dashboards from a folder); dashboard JSON definitions not yet committed
 - ✅ Structured JSON logging
 - ✅ Multi-tier health checks
 - ✅ Alert management with configurable rules
@@ -432,7 +437,7 @@ azure-ai-infra-platform/
 │   ├── api/              # API routes and schemas
 │   ├── llm/              # LLM integration (OpenAI, prompts)
 │   ├── rag/              # RAG implementation (Cognitive Search)
-│   ├── guardrails/       # Safety and rate limiting
+│   ├── guardrails/       # Platform-level input/output filtering for /chat, /rag — separate implementation from providers/guardrails below
 │   ├── monitoring/       # Metrics, logging, alerts
 │   ├── config/           # Configuration management
 │   ├── utilities/        # Utilities workflows
@@ -444,7 +449,7 @@ azure-ai-infra-platform/
 │   │   ├── ab_testing/     # A/B testing framework
 │   │   ├── observability/  # Prometheus metrics export
 │   │   ├── evaluation/     # Golden sets prompt evaluation
-│   │   └── guardrails/     # Responsible AI guardrails
+│   │   └── guardrails/     # Gateway-scoped PII/safety detection with block/redact modes and an audit trail — distinct from top-level guardrails/
 │   └── main.py           # FastAPI application
 ├── tests/                # 372 unit tests
 ├── docs/                 # Documentation (78.9KB)
