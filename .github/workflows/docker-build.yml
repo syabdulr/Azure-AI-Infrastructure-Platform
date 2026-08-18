@@ -98,7 +98,7 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
 
@@ -144,8 +144,14 @@ jobs:
           echo "Waiting for container to be healthy..."
           sleep 30
 
-          # Check if container is running
-          docker ps -a | grep $CONTAINER_ID
+          # Check if container is running (docker ps -a truncates IDs to 12
+          # chars, so grepping the full $CONTAINER_ID against it never
+          # matches — use docker inspect instead)
+          if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_ID")" != "true" ]; then
+            echo "Container is not running:"
+            docker logs "$CONTAINER_ID"
+            exit 1
+          fi
 
           # Test health endpoint
           echo "Testing health endpoint..."
