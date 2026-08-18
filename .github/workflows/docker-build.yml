@@ -81,10 +81,16 @@ jobs:
     needs: build-and-push
     if: github.event_name != 'pull_request'
     steps:
+      - name: Set lowercase image name
+        # steps.meta.outputs.tags (aliased as image-tag) is a multi-line,
+        # multi-tag string — not a valid single image reference. Build one
+        # concrete tag instead of reusing that output directly.
+        run: echo "IMAGE_NAME=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build-and-push.outputs.image-tag }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
           format: 'sarif'
           output: 'trivy-results.sarif'
 
@@ -102,6 +108,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set lowercase image name
+        # steps.meta.outputs.tags (aliased as image-tag) is a multi-line,
+        # multi-tag string — not a valid single image reference. Build one
+        # concrete tag instead of reusing that output directly.
+        run: echo "IMAGE_NAME=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -114,7 +126,7 @@ jobs:
 
       - name: Pull Docker image
         run: |
-          docker pull ${{ needs.build-and-push.outputs.image-tag }}
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
 
       - name: Test Docker image
         run: |
@@ -123,7 +135,7 @@ jobs:
             -p 8000:8000 \
             -e DEBUG=true \
             -e LOG_LEVEL=INFO \
-            ${{ needs.build-and-push.outputs.image-tag }})
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }})
 
           # Wait for container to be healthy
           echo "Waiting for container to be healthy..."
@@ -148,11 +160,87 @@ jobs:
 
       - name: Check image size
         run: |
-          IMAGE_SIZE=$(docker images ${{ needs.build-and-push.outputs.image-tag }} --format "{{.Size}}")
+          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}"
+          IMAGE_SIZE=$(docker images "$IMAGE_REF" --format "{{.Size}}")
           echo "Docker image size: $IMAGE_SIZE"
 
           # Check if image size is under 500MB (approximate check)
-          SIZE_BYTES=$(docker images ${{ needs.build-and-push.outputs.image-tag }} --format "{{.Size}}" | sed 's/MB//' | sed 's/GB/*1024/' | bc)
+          SIZE_BYTES=$(docker images "$IMAGE_REF" --format "{{.Size}}" | sed 's/MB//' | sed 's/GB/*1024/' | bc)
           if [ $SIZE_BYTES -gt 512 ]; then
             echo "Warning: Image size exceeds 500MB"
           fi
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    # A needs: dependency (not a separate workflow racing this one) guarantees
+    # the image this job pulls is the one build-and-push just finished pushing.
+    needs: [build-and-push, test-image]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    environment:
+      name: staging
+      url: https://staging.example.com
+    steps:
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set lowercase image name
+        run: echo "IMAGE_NAME=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
+      - name: Pull latest image
+        run: |
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Stop existing container
+        run: |
+          docker stop azure-ai-platform-staging || true
+          docker rm azure-ai-platform-staging || true
+        continue-on-error: true
+
+      - name: Start new container
+        run: |
+          docker run -d \
+            --name azure-ai-platform-staging \
+            -p 8001:8000 \
+            --restart unless-stopped \
+            -e AZURE_OPENAI_ENDPOINT=${{ secrets.AZURE_OPENAI_ENDPOINT }} \
+            -e AZURE_OPENAI_API_KEY=${{ secrets.AZURE_OPENAI_API_KEY }} \
+            -e AZURE_OPENAI_DEPLOYMENT_NAME=${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }} \
+            -e AZURE_SEARCH_ENDPOINT=${{ secrets.AZURE_SEARCH_ENDPOINT }} \
+            -e AZURE_SEARCH_API_KEY=${{ secrets.AZURE_SEARCH_API_KEY }} \
+            -e AZURE_SEARCH_INDEX_NAME=${{ secrets.AZURE_SEARCH_INDEX_NAME }} \
+            -e DEBUG=false \
+            -e LOG_LEVEL=INFO \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Health check
+        run: |
+          echo "Waiting for service to be healthy..."
+          sleep 15
+
+          MAX_ATTEMPTS=10
+          ATTEMPT=0
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            if curl -f http://localhost:8001/health; then
+              echo "Health check passed!"
+              exit 0
+            fi
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "Health check attempt $ATTEMPT failed. Retrying..."
+            sleep 10
+          done
+
+          echo "Health check failed after $MAX_ATTEMPTS attempts"
+          exit 1
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deployment failed. Rolling back..."
+          docker stop azure-ai-platform-staging || true
+          docker rm azure-ai-platform-staging || true
+          echo "Rollback completed"
