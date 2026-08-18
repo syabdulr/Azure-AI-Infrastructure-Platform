@@ -10,7 +10,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/${{ tolower(github.event.repository.name) }}
 
 jobs:
   build-and-push:
@@ -25,6 +24,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set lowercase image name
+        # GitHub Actions expressions have no tolower() function; ghcr.io
+        # requires a lowercase image name, so compute it in the shell.
+        run: echo "IMAGE_NAME=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -132,9 +136,9 @@ jobs:
           echo "Testing health endpoint..."
           curl -f http://localhost:8000/health || exit 1
 
-          # Test API endpoints
-          echo "Testing API endpoints..."
-          curl -f http://localhost:8000/api || exit 1
+          # Test API docs endpoint (FastAPI's built-in Swagger UI)
+          echo "Testing API docs endpoint..."
+          curl -f http://localhost:8000/docs || exit 1
 
           # Clean up
           docker stop $CONTAINER_ID

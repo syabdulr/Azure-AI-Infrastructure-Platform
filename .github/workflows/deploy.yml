@@ -9,7 +9,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/${{ tolower(github.event.repository.name) }}
 
 jobs:
   deploy-staging:
@@ -23,6 +22,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set lowercase image name
+        # GitHub Actions expressions have no tolower() function; ghcr.io
+        # requires a lowercase image name, so compute it in the shell.
+        run: echo "IMAGE_NAME=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -35,7 +39,19 @@ jobs:
 
       - name: Pull latest image
         run: |
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          # Retry: docker-build.yml runs concurrently on the same push and
+          # may not have finished pushing :latest yet.
+          MAX_ATTEMPTS=10
+          ATTEMPT=0
+          until docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest; do
+            ATTEMPT=$((ATTEMPT + 1))
+            if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+              echo "Image not available after $MAX_ATTEMPTS attempts"
+              exit 1
+            fi
+            echo "Image not available yet, retrying in 30s... (attempt $ATTEMPT/$MAX_ATTEMPTS)"
+            sleep 30
+          done
 
       - name: Stop existing container
         run: |
@@ -99,6 +115,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set lowercase image name
+        # GitHub Actions expressions have no tolower() function; ghcr.io
+        # requires a lowercase image name, so compute it in the shell.
+        run: echo "IMAGE_NAME=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -117,7 +138,19 @@ jobs:
 
       - name: Pull versioned image
         run: |
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+          # Retry: docker-build.yml runs concurrently on the same tag push
+          # and may not have finished pushing this version yet.
+          MAX_ATTEMPTS=10
+          ATTEMPT=0
+          until docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}; do
+            ATTEMPT=$((ATTEMPT + 1))
+            if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+              echo "Image not available after $MAX_ATTEMPTS attempts"
+              exit 1
+            fi
+            echo "Image not available yet, retrying in 30s... (attempt $ATTEMPT/$MAX_ATTEMPTS)"
+            sleep 30
+          done
 
       - name: Backup current deployment
         run: |
