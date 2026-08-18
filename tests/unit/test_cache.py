@@ -4,7 +4,9 @@ import asyncio
 from datetime import datetime, timedelta
 
 import pytest
+import pytest_asyncio
 
+import src.providers.cache.manager as cache_manager_module
 from src.providers.cache.key_generator import (
     generate_cache_key,
     generate_cache_key_from_request,
@@ -13,6 +15,38 @@ from src.providers.cache.key_generator import (
 from src.providers.cache.manager import CacheManager, get_cache_manager
 from src.providers.cache.models import CacheEntry, CacheMetrics, CacheResult, CacheStatus
 from src.providers.cache.sqlite_cache import SQLiteCache
+
+
+@pytest_asyncio.fixture
+async def cache():
+    """In-memory SQLiteCache, closed after the test.
+
+    aiosqlite connections run a background thread per connection; leaving
+    them unclosed prevents the pytest process from exiting even after all
+    tests pass (it just hangs).
+    """
+    c = SQLiteCache(db_path=":memory:")
+    await c.initialize()
+    yield c
+    await c.close()
+
+
+@pytest_asyncio.fixture
+async def manager():
+    """CacheManager over an in-memory SQLiteCache, closed after the test."""
+    m = CacheManager(backend=SQLiteCache(db_path=":memory:"))
+    await m.initialize()
+    yield m
+    await m.backend.close()
+
+
+@pytest_asyncio.fixture
+async def global_manager():
+    """The process-global CacheManager singleton, closed and reset after the test."""
+    m = get_cache_manager()
+    yield m
+    await m.backend.close()
+    cache_manager_module._cache_manager = None
 
 
 class TestCacheEntry:
@@ -219,11 +253,8 @@ class TestCacheKeyGenerator:
 
 
 @pytest.mark.asyncio
-async def test_cache_set_and_get():
+async def test_cache_set_and_get(cache):
     """Test setting and getting from cache."""
-    cache = SQLiteCache(db_path=":memory:")
-    await cache.initialize()
-
     key = "test_key"
     value = {"content": "test response"}
 
@@ -238,11 +269,8 @@ async def test_cache_set_and_get():
 
 
 @pytest.mark.asyncio
-async def test_cache_miss():
+async def test_cache_miss(cache):
     """Test cache miss."""
-    cache = SQLiteCache(db_path=":memory:")
-    await cache.initialize()
-
     result = await cache.get("nonexistent_key")
 
     assert result.is_miss is True
@@ -250,11 +278,8 @@ async def test_cache_miss():
 
 
 @pytest.mark.asyncio
-async def test_cache_expiry():
+async def test_cache_expiry(cache):
     """Test cache entry expiry."""
-    cache = SQLiteCache(db_path=":memory:")
-    await cache.initialize()
-
     key = "expiring_key"
     value = "test"
 
@@ -275,11 +300,8 @@ async def test_cache_expiry():
 
 
 @pytest.mark.asyncio
-async def test_cache_delete():
+async def test_cache_delete(cache):
     """Test deleting from cache."""
-    cache = SQLiteCache(db_path=":memory:")
-    await cache.initialize()
-
     key = "delete_key"
     value = "test"
 
@@ -299,11 +321,8 @@ async def test_cache_delete():
 
 
 @pytest.mark.asyncio
-async def test_cache_clear():
+async def test_cache_clear(cache):
     """Test clearing cache."""
-    cache = SQLiteCache(db_path=":memory:")
-    await cache.initialize()
-
     await cache.set("key1", "value1")
     await cache.set("key2", "value2")
     await cache.set("key3", "value3")
@@ -318,11 +337,8 @@ async def test_cache_clear():
 
 
 @pytest.mark.asyncio
-async def test_cache_size():
+async def test_cache_size(cache):
     """Test cache size."""
-    cache = SQLiteCache(db_path=":memory:")
-    await cache.initialize()
-
     assert await cache.size() == 0
 
     await cache.set("key1", "value1")
@@ -333,11 +349,8 @@ async def test_cache_size():
 
 
 @pytest.mark.asyncio
-async def test_cache_cleanup_expired():
+async def test_cache_cleanup_expired(cache):
     """Test cleaning up expired entries."""
-    cache = SQLiteCache(db_path=":memory:")
-    await cache.initialize()
-
     # Set some entries with different TTLs
     await cache.set("valid_key", "value1", ttl=3600)
     await cache.set("expired_key1", "value2", ttl=1)
@@ -356,11 +369,8 @@ async def test_cache_cleanup_expired():
 
 
 @pytest.mark.asyncio
-async def test_cache_metrics():
+async def test_cache_metrics(cache):
     """Test cache metrics."""
-    cache = SQLiteCache(db_path=":memory:")
-    await cache.initialize()
-
     # Hit
     await cache.set("key1", "value1")
     await cache.get("key1")
@@ -377,11 +387,8 @@ async def test_cache_metrics():
 
 
 @pytest.mark.asyncio
-async def test_cache_with_metadata():
+async def test_cache_with_metadata(cache):
     """Test caching with metadata."""
-    cache = SQLiteCache(db_path=":memory:")
-    await cache.initialize()
-
     key = "metadata_key"
     value = {"content": "test"}
     metadata = {
@@ -405,11 +412,8 @@ async def test_cache_with_metadata():
 
 
 @pytest.mark.asyncio
-async def test_manager_get_and_set():
+async def test_manager_get_and_set(manager):
     """Test manager get and set."""
-    manager = CacheManager(backend=SQLiteCache(db_path=":memory:"))
-    await manager.initialize()
-
     key = "test_key"
     value = {"content": "test"}
 
@@ -421,11 +425,8 @@ async def test_manager_get_and_set():
 
 
 @pytest.mark.asyncio
-async def test_manager_enable_disable():
+async def test_manager_enable_disable(manager):
     """Test enabling and disabling cache."""
-    manager = CacheManager(backend=SQLiteCache(db_path=":memory:"))
-    await manager.initialize()
-
     key = "test_key"
     value = "test"
 
@@ -451,11 +452,8 @@ async def test_manager_enable_disable():
 
 
 @pytest.mark.asyncio
-async def test_manager_model_ttl():
+async def test_manager_model_ttl(manager):
     """Test model-specific TTLs."""
-    manager = CacheManager(backend=SQLiteCache(db_path=":memory:"))
-    await manager.initialize()
-
     manager.set_model_ttl("gpt-4", 7200)  # 2 hours
 
     assert manager.get_model_ttl("gpt-4") == 7200
@@ -463,11 +461,8 @@ async def test_manager_model_ttl():
 
 
 @pytest.mark.asyncio
-async def test_manager_cost_savings():
+async def test_manager_cost_savings(manager):
     """Test cost savings calculation."""
-    manager = CacheManager(backend=SQLiteCache(db_path=":memory:"))
-    await manager.initialize()
-
     # Simulate some hits
     await manager.set("key1", "value1")
     await manager.set("key2", "value2")
@@ -484,11 +479,8 @@ async def test_manager_cost_savings():
 
 
 @pytest.mark.asyncio
-async def test_manager_cache_stats():
+async def test_manager_cache_stats(manager):
     """Test comprehensive cache stats."""
-    manager = CacheManager(backend=SQLiteCache(db_path=":memory:"))
-    await manager.initialize()
-
     stats = await manager.get_cache_stats()
 
     assert "enabled" in stats
@@ -502,18 +494,17 @@ async def test_manager_cache_stats():
 
 
 @pytest.mark.asyncio
-async def test_global_manager_singleton():
+async def test_global_manager_singleton(global_manager):
     """Test global cache manager is a singleton."""
-    manager1 = get_cache_manager()
     manager2 = get_cache_manager()
 
-    assert manager1 is manager2
+    assert global_manager is manager2
 
 
 @pytest.mark.asyncio
-async def test_global_manager_operations():
+async def test_global_manager_operations(global_manager):
     """Test operations on global manager."""
-    manager = get_cache_manager()
+    manager = global_manager
 
     # These should work without initialization
     assert manager.is_enabled() is True
