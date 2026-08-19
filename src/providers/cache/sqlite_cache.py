@@ -42,7 +42,8 @@ class SQLiteCache(CacheBackend):
         """Initialize database schema."""
         db = await self._get_db()
 
-        await db.execute("""
+        await db.execute(
+            """
             CREATE TABLE IF NOT EXISTS cache_entries (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
@@ -55,17 +56,22 @@ class SQLiteCache(CacheBackend):
                 completion_tokens INTEGER NOT NULL,
                 cost REAL NOT NULL
             )
-        """)
+        """
+        )
 
-        await db.execute("""
+        await db.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_expires_at
             ON cache_entries(expires_at)
-        """)
+        """
+        )
 
-        await db.execute("""
+        await db.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_provider_model
             ON cache_entries(provider, model)
-        """)
+        """
+        )
 
         await db.commit()
 
